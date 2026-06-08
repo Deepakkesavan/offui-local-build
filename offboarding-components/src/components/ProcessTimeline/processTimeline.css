@@ -1,0 +1,146 @@
+.offui-prc-wrapper {
+  width: 100%;
+  max-width: 520px;
+  padding: 24px 24px 24px 30px;
+  background: #fff;
+  border: #9ca3af 2px solid;
+  border-radius: 8px;
+}
+
+.offui-prc-heading {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 16px;
+  letter-spacing: 0;
+  color: #001f29;
+  margin-bottom: 24px;
+}
+
+.offui-prc-timeline-item {
+  display: flex;
+  gap: 20px;
+  position: relative;
+}
+
+.offui-prc-timeline-marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.offui-prc-timeline-dot {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.offui-prc-timeline-line {
+  width: 4px;
+  min-height: 80px;
+  background: #e5e7eb;
+}
+
+.offui-prc-line-active {
+  background: #005a58;
+}
+
+/* COMPLETED */
+
+.offui-prc-completed .offui-prc-timeline-dot {
+  background: #005a58;
+}
+
+.offui-prc-check {
+  color: white;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+/* IN PROGRESS */
+
+.offui-prc-in-progress .offui-prc-timeline-dot {
+  background: white;
+  border: 1px solid #005a58;
+}
+
+.offui-prc-in-progress .offui-prc-timeline-dot::after {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #d9d9d9;
+}
+
+/* PENDING */
+
+.offui-prc-pending .offui-prc-timeline-dot {
+  background: #e5e7eb;
+}
+
+.offui-prc-pending .offui-prc-timeline-dot::after {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #7f8c8d;
+}
+
+.offui-prc-content {
+  padding-bottom: 10px;
+}
+
+.offui-prc-content h3 {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 24px;
+  letter-spacing: 0;
+  color: #001f29;
+  margin: 0 0 8px;
+}
+
+.offui-prc-content p {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  letter-spacing: 0;
+  color: #4b5563;
+  margin: 0 0 12px;
+}
+
+/* Faded pending text */
+
+.offui-prc-pending .offui-prc-content h3,
+.offui-prc-pending .offui-prc-content p {
+  color: #9ca3af;
+}
+
+/* STATUS BADGES */
+
+.offui-prc-badge {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 20px;
+  letter-spacing: 0;
+}
+
+.offui-prc-badge.completed {
+  background: #b8ece9;
+  color: #0f4c4c;
+  padding: 10px;
+  border-radius: 20px;
+}
+
+.offui-prc-badge.in-progress {
+  background: #e5e5e5;
+  color: #4b5563;
+  padding: 10px;
+  border-radius: 20px;
+}

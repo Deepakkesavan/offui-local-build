@@ -1,0 +1,51 @@
+.offui-card-component {
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  padding: 36px;
+  box-sizing: border-box;
+}
+
+/* Title */
+
+.offui-card-title {
+  margin: 0;
+
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  letter-spacing: 0.08em;
+
+  color: #4d5761;
+
+  text-transform: uppercase;
+}
+
+/* Main Value */
+
+.offui-card-value {
+  margin: 12px 0;
+
+  font-family: Inter, sans-serif;
+  font-size: 56px;
+  font-weight: 700;
+  line-height: 64px;
+
+  color: #005a58;
+}
+
+/* Subtitle */
+
+.offui-card-subtitle {
+  margin: 0;
+
+  font-family: Inter, sans-serif;
+  font-size: 18px;
+  font-weight: 400;
+  font-style: italic;
+  line-height: 28px;
+
+  color: #667085;
+}
