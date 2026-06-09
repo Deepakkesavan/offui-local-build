@@ -1,12 +1,12 @@
 // import React from 'react'
 import './App.css'
-import UserDashboard from './screens/InitiateExit/userDashboard'
+import AppRoutes from './app.routes'
 
 function App() {
 
   return (
    <>
-    <UserDashboard></UserDashboard>
+    <AppRoutes></AppRoutes>
    </>
   )
 }
