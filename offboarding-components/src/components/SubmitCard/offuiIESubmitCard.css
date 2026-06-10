@@ -1,0 +1,76 @@
+.offui-submit-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+
+  width: 100%;
+  padding: 48px 32px;
+  box-sizing: border-box;
+
+  background: #ffffff;
+  border: 1px solid #d8dde3;
+  border-radius: 8px;
+
+  text-align: center;
+}
+
+/* Green check circle */
+.offui-submit-card-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: #b8ece9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.offui-submit-card-icon svg {
+  width: 36px;
+  height: 36px;
+  stroke: #005a58;
+  stroke-width: 2.5;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Heading */
+.offui-submit-card-title {
+  margin: 0;
+  font-family: Inter, sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 32px;
+  color: #001f29;
+}
+
+/* Sub message */
+.offui-submit-card-message {
+  margin: 0;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  color: #667085;
+}
+
+/* Timestamp pill */
+.offui-submit-card-timestamp {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 8px 16px;
+  border-radius: 20px;
+  background: #f0fafa;
+  border: 1px solid #b8ece9;
+
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #005a58;
+  letter-spacing: 0.03em;
+}

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import './offuiForms.css';
-import { type FormField, type FormComponentProps } from './offuiFormData';
+import { type FormComponentProps } from './offuiFormData';
 
 
 const offuiForms: React.FC<FormComponentProps> = ({

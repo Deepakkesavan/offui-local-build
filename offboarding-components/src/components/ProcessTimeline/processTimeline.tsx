@@ -1,13 +1,16 @@
-import React from 'react';
 import './processTimeline.css';
-import ProcessTimelineData from './processTimelineData';
+import defaultData, { type TimelineItem } from './processTimelineData';
 
-const ProcessTimeline = () => {
+interface ProcessTimelineProps {
+  items?: TimelineItem[];
+}
+
+const ProcessTimeline = ({ items = defaultData }: ProcessTimelineProps) => {
   return (
     <div className="offui-prc-wrapper">
       <h2 className="offui-prc-heading">Process Timeline</h2>
 
-      {ProcessTimelineData.map((item, index) => (
+      {items.map((item, index) => (
         <div
           key={index}
           className={`offui-prc-timeline-item offui-prc-${item.status}`}
@@ -19,12 +22,10 @@ const ProcessTimeline = () => {
               )}
             </div>
 
-            {index !== ProcessTimelineData.length - 1 && (
+            {index !== items.length - 1 && (
               <div
                 className={`offui-prc-timeline-line ${
-                  item.status === 'completed'
-                    ? 'offui-prc-line-active'
-                    : ''
+                  item.status === 'completed' ? 'offui-prc-line-active' : ''
                 }`}
               />
             )}
@@ -37,14 +38,10 @@ const ProcessTimeline = () => {
             {item.status !== 'pending' && (
               <span
                 className={`offui-prc-badge ${
-                  item.status === 'completed'
-                    ? 'completed'
-                    : 'in-progress'
+                  item.status === 'completed' ? 'completed' : 'in-progress'
                 }`}
               >
-                {item.status === 'completed'
-                  ? 'COMPLETED'
-                  : 'IN PROGRESS'}
+                {item.status === 'completed' ? 'COMPLETED' : 'IN PROGRESS'}
               </span>
             )}
           </div>
