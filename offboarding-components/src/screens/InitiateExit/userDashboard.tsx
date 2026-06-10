@@ -10,14 +10,14 @@ import type { FormField } from '../../components/StepperForm/offuiFormData';
 
 const JWT_TOKEN = 'eyJhbGciOiJIUzUxMiJ9.eyJlbWFpbCI6IkRlZXBha0tAY2xhcml1bS50ZWNoIiwiZW1wSWQiOjEyMjUsImRlc2lnbmF0aW9uIjoiVHJhaW5lZSBTb2Z0d2FyZSBFbmdpbmVlciIsImlhdCI6MTc4MTEyMzkyMiwiZXhwIjoxNzgxMTI3NTIyfQ.iu6_Iellw3uk7acCddYrFMXhyM5PDV-A0J-T2RBHlMqBIzaZ64MI3caC2IpEqda5wURZxKAIfJ8uONDq2fW9XA';
 const API_URL = 'http://localhost:5206/api/EmsData';
+const SUBMIT_URL = 'http://localhost:5206/api/submission/submit';
 
-// Shape of the submit API response
-interface SubmitResponse {
-  statusCode: string;
-  message: string;
-  time: string;   // "HH:mm:ss"
-  date: string;   // "YYYY-MM-DD"
-}
+const axiosInstance = axios.create({
+  headers: {
+    Authorization: `Bearer ${JWT_TOKEN}`,
+  },
+  withCredentials: true,
+});
 
 const UserDashboard = () => {
   const [empData, setEmpData] = useState<Record<string, string>>({
@@ -34,33 +34,28 @@ const UserDashboard = () => {
   const [submitTime, setSubmitTime] = useState('');
   const [timelineItems, setTimelineItems] = useState<TimelineItem[]>(defaultTimelineData);
 
-  // Fetch employee data from EMS on mount
   useEffect(() => {
-    axios
-      .get(API_URL, {
-        headers: {
-          Authorization: `Bearer ${JWT_TOKEN}`,
-        },
-        withCredentials: true,
-      })
+    axiosInstance
+      .get(API_URL)
       .then((res) => {
         const list = Array.isArray(res.data) ? res.data : [res.data];
         const data = list[0];
+
         if (!data) {
           console.warn('No employee data returned');
           return;
         }
-        setEmpData((prev) => ({
-          ...prev,
+
+        setEmpData({
           employeeId: data.empId ?? '',
           fullName: `${data.firstName ?? ''} ${data.lastName ?? ''}`.trim(),
           email: data.email ?? '',
-          designation: data.desg ?? '',
+          designation: data.desg ?? '',                                         // ← fixed key
           DateOfJoining: data.doj
             ? new Date(data.doj).toISOString().split('T')[0]
             : '',
           ReportingManager: data.reportingManager ?? '',
-        }));
+        });
       })
       .catch((err) => {
         console.error('Failed to fetch employee data:', err);
@@ -69,40 +64,31 @@ const UserDashboard = () => {
 
   const handleSubmit = async (data: Record<string, string>) => {
     try {
-      const res = await fetch('http://localhost:5206/api/submission/submit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          employeeId: data.employeeId,
-          action: 'Resignation Submitted',
-          performedBy: data.fullName ?? data.employeeId,
-          employeeData: data,
-          stageBefore: null,
-          stageAfter: 'exit_interview',
-        }),
-      });
+      const now = new Date();
+      const date = now.toISOString().split('T')[0];
+      const time = now.toTimeString().split(' ')[0];
 
-      if (res.status === 201) {
-        const payload: SubmitResponse = await res.json();
+      const payload = {
+        employeeID: data.empId,
+        action: 'record_created',
+        performedBy: data.fullName || data.employeeId,
+        stageBefore: null,
+        stageAfter: 'exit_interview',
+      };
 
-        if (payload.statusCode === '201' && payload.message === 'Resignation Submitted') {
-          // Mark first timeline item as completed
-          setTimelineItems((prev) =>
-            prev.map((item, idx) =>
-              idx === 0
-                ? {
-                    ...item,
-                    status: 'completed',
-                    subtitle: `Confirmed on ${payload.date}`,
-                  }
-                : item
-            )
-          );
+      const res = await axiosInstance.post(SUBMIT_URL, payload);
 
-          setSubmitDate(payload.date);
-          setSubmitTime(payload.time);
-          setSubmitted(true);
-        }
+      if (res.status === 200 || res.status === 201) {
+        setTimelineItems((prev) =>
+          prev.map((item, idx) =>
+            idx === 0
+              ? { ...item, status: 'completed', subtitle: `Confirmed on ${date}` }
+              : item
+          )
+        );
+        setSubmitDate(date);
+        setSubmitTime(time);
+        setSubmitted(true);
       }
     } catch (err) {
       console.error('Submit failed:', err);
@@ -136,7 +122,7 @@ const UserDashboard = () => {
       label: 'Designation',
       type: 'text',
       placeholder: 'Designation',
-      value: empData.desg,
+      value: empData.designation,              // ← was empData.desg (undefined)
     },
     {
       name: 'DateOfJoining',
@@ -156,16 +142,13 @@ const UserDashboard = () => {
   return (
     <>
       <section className="offui-ie">
-        {/* Left — Process Timeline (dynamic) */}
         <div className="offui-ie-left">
           <ProcessTimeline items={timelineItems} />
         </div>
 
-        {/* Right */}
         <div className="offui-ie-right">
           <div className="offui-ie-right-form">
             {submitted ? (
-              /* Show success card in place of the form */
               <OffuiIESubmitCard date={submitDate} time={submitTime} />
             ) : (
               <OffuiForms
