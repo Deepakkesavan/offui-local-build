@@ -8,7 +8,7 @@ import defaultTimelineData, { type TimelineItem } from '../../components/Process
 import './userDashboard.css';
 import type { FormField } from '../../components/StepperForm/offuiFormData';
 
-const JWT_TOKEN = 'eyJhbGciOiJIUzUxMiJ9.eyJlbWFpbCI6IkRlZXBha0tAY2xhcml1bS50ZWNoIiwiZW1wSWQiOjEyMjUsImRlc2lnbmF0aW9uIjoiVHJhaW5lZSBTb2Z0d2FyZSBFbmdpbmVlciIsImlhdCI6MTc4MTEyMzkyMiwiZXhwIjoxNzgxMTI3NTIyfQ.iu6_Iellw3uk7acCddYrFMXhyM5PDV-A0J-T2RBHlMqBIzaZ64MI3caC2IpEqda5wURZxKAIfJ8uONDq2fW9XA';
+const JWT_TOKEN = 'eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJEZWVwYWtLQGNsYXJpdW0udGVjaCIsImVtcElkIjoxMjI1LCJkZXNpZ25hdGlvbiI6IlRyYWluZWUgU29mdHdhcmUgRW5naW5lZXIiLCJpYXQiOjE3ODExNjI3NDIsImV4cCI6MTc4MTE2NjM0Mn0.scQrMWSdm_a3kOkFJ8HJsyinxB2bqGp7Ix_AYiJBR3uZK3tI3yCnxcx217QnI-49MoFd8hJEET6vEPZQpQVdBQ';
 const API_URL = 'http://localhost:5206/api/EmsData';
 const SUBMIT_URL = 'http://localhost:5206/api/submission/submit';
 
@@ -69,9 +69,10 @@ const UserDashboard = () => {
       const time = now.toTimeString().split(' ')[0];
 
       const payload = {
-        employeeID: data.empId,
+        employeeId: data.employeeId,        // was: employeeID: data.empId
         action: 'record_created',
         performedBy: data.fullName || data.employeeId,
+        employeeData: null,
         stageBefore: null,
         stageAfter: 'exit_interview',
       };
