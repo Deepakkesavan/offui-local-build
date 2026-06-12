@@ -8,14 +8,13 @@ import defaultTimelineData, { type TimelineItem } from '../../components/Process
 import './userDashboard.css';
 import type { FormField } from '../../components/StepperForm/offuiFormData';
 
-const JWT_TOKEN = 'eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJEZWVwYWtLQGNsYXJpdW0udGVjaCIsImVtcElkIjoxMjI1LCJkZXNpZ25hdGlvbiI6IlRyYWluZWUgU29mdHdhcmUgRW5naW5lZXIiLCJpYXQiOjE3ODExNjI3NDIsImV4cCI6MTc4MTE2NjM0Mn0.scQrMWSdm_a3kOkFJ8HJsyinxB2bqGp7Ix_AYiJBR3uZK3tI3yCnxcx217QnI-49MoFd8hJEET6vEPZQpQVdBQ';
-const API_URL = 'http://localhost:5206/api/EmsData';
+const JWT_TOKEN = 'eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJEZWVwYWtLQGNsYXJpdW0udGVjaCIsImVtcElkIjoxMjI1LCJkZXNpZ25hdGlvbiI6IlRyYWluZWUgU29mdHdhcmUgRW5naW5lZXIiLCJpYXQiOjE3ODEyNDA2MjksImV4cCI6MTc4MTI0NDIyOX0.Gvp20R9RgAPEvJ16djRIkJ3_PXv75a0ffIxRFCV3_sA8mzQOF2FVSEJ7vfBYKi-FQyPXwIZ3hL3wVqUb3ve4RQ'; // keep your existing token
+const API_URL    = 'http://localhost:5206/api/EmsData';
 const SUBMIT_URL = 'http://localhost:5206/api/submission/submit';
+const GET_SUBMIT_URL = 'http://localhost:5206/api/submission/getsubmit';
 
 const axiosInstance = axios.create({
-  headers: {
-    Authorization: `Bearer ${JWT_TOKEN}`,
-  },
+  headers: { Authorization: `Bearer ${JWT_TOKEN}` },
   withCredentials: true,
 });
 
@@ -29,57 +28,77 @@ const UserDashboard = () => {
     ReportingManager: '',
   });
 
-  const [submitted, setSubmitted] = useState(false);
-  const [submitDate, setSubmitDate] = useState('');
-  const [submitTime, setSubmitTime] = useState('');
+  const [submitted, setSubmitted]     = useState(false);
+  const [submitDate, setSubmitDate]   = useState('');
+  const [submitTime, setSubmitTime]   = useState('');
   const [timelineItems, setTimelineItems] = useState<TimelineItem[]>(defaultTimelineData);
+  const [empLoaded, setEmpLoaded]     = useState(false); // guard: wait for empId before checking
 
+  // ── Step 1: fetch employee info ──────────────────────────────────
   useEffect(() => {
     axiosInstance
       .get(API_URL)
       .then((res) => {
         const list = Array.isArray(res.data) ? res.data : [res.data];
         const data = list[0];
-
-        if (!data) {
-          console.warn('No employee data returned');
-          return;
-        }
+        if (!data) return;
 
         setEmpData({
-          employeeId: data.empId ?? '',
-          fullName: `${data.firstName ?? ''} ${data.lastName ?? ''}`.trim(),
-          email: data.email ?? '',
-          designation: data.desg ?? '',                                         // ← fixed key
-          DateOfJoining: data.doj
-            ? new Date(data.doj).toISOString().split('T')[0]
-            : '',
+          employeeId:      String(data.empId ?? ''),
+          fullName:        `${data.firstName ?? ''} ${data.lastName ?? ''}`.trim(),
+          email:           data.email ?? '',
+          designation:     data.desg ?? '',
+          DateOfJoining:   data.doj ? new Date(data.doj).toISOString().split('T')[0] : '',
           ReportingManager: data.reportingManager ?? '',
         });
+        setEmpLoaded(true);
       })
-      .catch((err) => {
-        console.error('Failed to fetch employee data:', err);
-      });
+      .catch((err) => console.error('Failed to fetch employee data:', err));
   }, []);
 
+  // ── Step 2: once we have the employeeId, check prior submission ──
+  useEffect(() => {
+    if (!empLoaded || !empData.employeeId) return;
+
+    axiosInstance
+      .get(`${GET_SUBMIT_URL}?employeeId=${empData.employeeId}`)
+      .then((res) => {
+        const data = res.data;
+        if (data.isSubmitted) {
+          // Restore the success state so the card shows instead of the form
+          setSubmitDate(data.date ?? '');
+          setSubmitTime(data.time ?? '');
+          setTimelineItems((prev) =>
+            prev.map((item, idx) =>
+              idx === 0
+                ? { ...item, status: 'completed', subtitle: `Confirmed on ${data.date}` }
+                : item
+            )
+          );
+          setSubmitted(true);
+        }
+      })
+      .catch((err) => console.error('Failed to check submission status:', err));
+  }, [empLoaded, empData.employeeId]);
+
+  // ── Submit handler ───────────────────────────────────────────────
   const handleSubmit = async (data: Record<string, string>) => {
     try {
-      const now = new Date();
-      const date = now.toISOString().split('T')[0];
-      const time = now.toTimeString().split(' ')[0];
-
       const payload = {
-        employeeId: data.employeeId,        // was: employeeID: data.empId
-        action: 'record_created',
+        employeeId:  data.employeeId,
+        action:      'record_created',
         performedBy: data.fullName || data.employeeId,
         employeeData: null,
-        stageBefore: null,
-        stageAfter: 'exit_interview',
+        stageBefore:  null,
+        stageAfter:   'exit_interview',
       };
 
       const res = await axiosInstance.post(SUBMIT_URL, payload);
 
       if (res.status === 200 || res.status === 201) {
+        const date = res.data.date ?? new Date().toISOString().split('T')[0];
+        const time = res.data.time ?? new Date().toTimeString().split(' ')[0];
+
         setTimelineItems((prev) =>
           prev.map((item, idx) =>
             idx === 0
@@ -97,87 +116,42 @@ const UserDashboard = () => {
   };
 
   const fields: FormField[] = [
-    {
-      name: 'employeeId',
-      label: 'Employee ID',
-      type: 'text',
-      placeholder: 'Enter Employee ID',
-      value: empData.employeeId,
-    },
-    {
-      name: 'fullName',
-      label: 'Full Name',
-      type: 'text',
-      placeholder: 'Enter Full Name',
-      value: empData.fullName,
-    },
-    {
-      name: 'email',
-      label: 'Email',
-      type: 'text',
-      placeholder: 'Enter Email',
-      value: empData.email,
-    },
-    {
-      name: 'designation',
-      label: 'Designation',
-      type: 'text',
-      placeholder: 'Designation',
-      value: empData.designation,              // ← was empData.desg (undefined)
-    },
-    {
-      name: 'DateOfJoining',
-      label: 'Date of Joining',
-      type: 'date',
-      value: empData.DateOfJoining,
-    },
-    {
-      name: 'ReportingManager',
-      label: 'Reporting Manager',
-      type: 'text',
-      placeholder: 'Reporting Manager',
-      value: empData.ReportingManager,
-    },
+    { name: 'employeeId',      label: 'Employee ID',       type: 'text', placeholder: 'Enter Employee ID',  value: empData.employeeId },
+    { name: 'fullName',        label: 'Full Name',          type: 'text', placeholder: 'Enter Full Name',    value: empData.fullName },
+    { name: 'email',           label: 'Email',              type: 'text', placeholder: 'Enter Email',        value: empData.email },
+    { name: 'designation',     label: 'Designation',        type: 'text', placeholder: 'Designation',        value: empData.designation },
+    { name: 'DateOfJoining',   label: 'Date of Joining',    type: 'date',                                    value: empData.DateOfJoining },
+    { name: 'ReportingManager',label: 'Reporting Manager',  type: 'text', placeholder: 'Reporting Manager',  value: empData.ReportingManager },
   ];
 
   return (
-    <>
-      <section className="offui-ie">
-        <div className="offui-ie-left">
-          <ProcessTimeline items={timelineItems} />
+    <section className="offui-ie">
+      <div className="offui-ie-left">
+        <ProcessTimeline items={timelineItems} />
+      </div>
+
+      <div className="offui-ie-right">
+        <div className="offui-ie-right-form">
+          {submitted ? (
+            <OffuiIESubmitCard date={submitDate} time={submitTime} />
+          ) : (
+            <OffuiForms
+              key={empData.employeeId}
+              title="Employee Details"
+              subtitle="Please verify your information"
+              submitLabel="Submit"
+              onSubmit={handleSubmit}
+              fields={fields}
+            />
+          )}
         </div>
 
-        <div className="offui-ie-right">
-          <div className="offui-ie-right-form">
-            {submitted ? (
-              <OffuiIESubmitCard date={submitDate} time={submitTime} />
-            ) : (
-              <OffuiForms
-                key={empData.employeeId}
-                title="Employee Details"
-                subtitle="Please verify your information"
-                submitLabel="Submit"
-                onSubmit={handleSubmit}
-                fields={fields}
-              />
-            )}
-          </div>
-
-          <div className="offui-ie-right-cards">
-            <OffuiCards
-              title="Notice Period"
-              value="30 Days"
-              subtitle="Standard contractual obligation"
-            />
-            <OffuiCards
-              title="No. Of Leaves Pending"
-              value="12"
-              subtitle="Privilege and Casual leaves combined"
-            />
-          </div>
+        <div className="offui-ie-right-cards">
+          <OffuiCards title="Notice Period"        value="30 Days" subtitle="Standard contractual obligation" />
+          <OffuiCards title="No. Of Leaves Pending" value="12"    subtitle="Privilege and Casual leaves combined" />
         </div>
-      </section>
-    </>
+      </div>
+    </section>
   );
 };
 
