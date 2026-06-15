@@ -1,0 +1,174 @@
+.offui-ed-loading {
+  padding: 48px;
+  text-align: center;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  color: #667085;
+}
+
+/* ── Page layout ────────────────────────────────────────────────── */
+.offui-ed {
+  width: 100%;
+  min-height: 100vh;
+  background: #f5f5f5;
+  padding: 40px 48px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* ── Header ─────────────────────────────────────────────────────── */
+.offui-ed-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.offui-ed-back-btn {
+  height: 36px;
+  padding: 0 16px;
+  border: 1px solid #d0d5dd;
+  border-radius: 4px;
+  background: #ffffff;
+  cursor: pointer;
+  font-family: Inter, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #344054;
+  white-space: nowrap;
+}
+
+.offui-ed-back-btn:hover {
+  background: #f9fafb;
+  border-color: #005a58;
+  color: #005a58;
+}
+
+.offui-ed-title {
+  margin: 0 0 4px;
+  font-family: Inter, sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: #001f29;
+}
+
+.offui-ed-subtitle {
+  margin: 0;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  color: #667085;
+}
+
+/* ── Card ───────────────────────────────────────────────────────── */
+.offui-ed-card {
+  background: #ffffff;
+  border: 1px solid #d8dde3;
+  border-radius: 8px;
+  padding: 32px;
+}
+
+/* ── Avatar banner ──────────────────────────────────────────────── */
+.offui-ed-banner {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.offui-ed-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #e0f2f1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: Inter, sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: #005a58;
+  flex-shrink: 0;
+}
+
+.offui-ed-name {
+  margin: 0 0 4px;
+  font-family: Inter, sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: #001f29;
+}
+
+.offui-ed-role {
+  margin: 0;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  color: #667085;
+}
+
+.offui-ed-divider {
+  height: 1px;
+  background: #f2f4f7;
+  margin-bottom: 24px;
+}
+
+/* ── Field grid ─────────────────────────────────────────────────── */
+.offui-ed-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.offui-ed-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.offui-ed-field--full {
+  grid-column: 1 / -1;
+}
+
+.offui-ed-field label {
+  margin-bottom: 6px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #667085;
+}
+
+.offui-ed-field input {
+  height: 44px;
+  padding: 0 12px;
+  border: 1px solid #cfd6dc;
+  border-radius: 4px;
+  background: #f8f9fa;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  color: #344054;
+  box-sizing: border-box;
+}
+
+/* ── Status row ─────────────────────────────────────────────────── */
+.offui-ed-status-row {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.offui-ed-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-family: Inter, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.offui-ed-status-badge--active {
+  background: #ecfdf3;
+  color: #027a48;
+}

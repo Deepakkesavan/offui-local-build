@@ -33,7 +33,7 @@ interface ManagerInfo {
 }
 
 // ── Config ─────────────────────────────────────────────────────────
-const JWT_TOKEN = 'eyJhbGciOiJIUzUxMiJ9.eyJlbWFpbCI6IkFndXN0aW5KZW5pbFJhalBAY2xhcml1bS50ZWNoIiwiZW1wSWQiOjEwODEsImRlc2lnbmF0aW9uIjoiVGVjaG5pY2FsIExlYWQiLCJpYXQiOjE3ODEyNDcwMTQsImV4cCI6MTg4MTI1MDYxNH0.vKa6zWs-Yrbd_uAI5YnGUS831CtIcCYsbhlIAaQMtK84W8LPq_VMf17Pp8gTwzQS_H-4X9VogkEbLmc1117dbw';
+const JWT_TOKEN = 'eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJBZ3VzdGluSmVuaWxSYWpQQGNsYXJpdW0udGVjaCIsImVtcElkIjoxMDgxLCJkZXNpZ25hdGlvbiI6IlRlY2huaWNhbCBMZWFkIiwiaWF0IjoxNzgxNTA5MTMzLCJleHAiOjE5ODE1MTI3MzN9.EG0UdmRFpgukHuboycJj6ofjSG2BltlXQG04iJVyHnaBDNtjuWkIgfJ2j5S26PSRaZ7j5FSshuAQ-ZTkBqqBHw';
 const MANAGER_INFO_URL = 'http://localhost:5206/api/managerinfo';
 const PAGE_SIZE = 5;
 
