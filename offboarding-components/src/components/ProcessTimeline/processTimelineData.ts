@@ -6,27 +6,45 @@ export interface TimelineItem {
   status: TimelineStatus;
 }
 
-// Default data — "Resignation Submitted" starts as in-progress.
-// The userDashboard swaps it to 'completed' after a successful POST.
 const processTimelineData: TimelineItem[] = [
   {
     title: 'Resignation Submitted',
     subtitle: 'Pending confirmation',
-    status: 'in-progress',    // ← was 'completed'; changes to 'completed' post-submit
+    status: 'in-progress',
   },
   {
-    title: 'Asset Recovery',
+    title: 'Reporting Manager Approval',
+    subtitle: 'Pending Manager approval',
+    status: 'pending',
+  },
+  {
+    title: 'Offboarding Initiated',
+    subtitle: 'Pending HR Initiation',
+    status: 'pending',
+  },
+  {
+    title: 'IT Department Approval',
     subtitle: 'Pending equipment return (MacBook, Badge)',
     status: 'pending',
   },
   {
-    title: 'Clearance Approvals',
-    subtitle: 'Awaiting Finance and IT sign-off',
+    title: 'Admin Approval',
+    subtitle: 'Awaiting Admin sign-off',
+    status: 'pending',
+  },
+  {
+    title: 'Finance Approval',
+    subtitle: 'Awaiting Finance sign-off',
+    status: 'pending',
+  },
+  {
+    title: 'HR Approval',
+    subtitle: 'Awaiting HR sign-off',
     status: 'pending',
   },
   {
     title: 'Final Day',
-    subtitle: 'Scheduled for Oct 31, 2023',
+    subtitle: 'Not yet scheduled',
     status: 'pending',
   },
 ];
