@@ -8,7 +8,7 @@ import defaultTimelineData, { type TimelineItem } from '../../components/Process
 import './userDashboard.css';
 import type { FormField } from '../../components/StepperForm/offuiFormData';
 
-const JWT_TOKEN = 'eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJEZWVwYWtLQGNsYXJpdW0udGVjaCIsImVtcElkIjoxMjI1LCJkZXNpZ25hdGlvbiI6IlRyYWluZWUgU29mdHdhcmUgRW5naW5lZXIiLCJpYXQiOjE3ODEyNDA2MjksImV4cCI6MTc4MTI0NDIyOX0.Gvp20R9RgAPEvJ16djRIkJ3_PXv75a0ffIxRFCV3_sA8mzQOF2FVSEJ7vfBYKi-FQyPXwIZ3hL3wVqUb3ve4RQ'; // keep your existing token
+const JWT_TOKEN = 'eyJhbGciOiJIUzUxMiJ9.eyJlbWFpbCI6Ik5vYmVsRnJhbmtsaW5MQGNsYXJpdW0udGVjaCIsImVtcElkIjoxMjMyLCJkZXNpZ25hdGlvbiI6IlRyYWluZWUgU29mdHdhcmUgRW5naW5lZXIiLCJpYXQiOjE3ODEyNDcwMTQsImV4cCI6MTc4MTI1MDYxNH0.4CaeK6CCdIoWwGhwdS6sGldQ-dnAkE8Nhqa2RNsMozSUUetGmjpT4VY6zz6q6zXWxVk8r7Ki6phvZm0Gh--9UQ'; 
 const API_URL    = 'http://localhost:5206/api/EmsData';
 const SUBMIT_URL = 'http://localhost:5206/api/submission/submit';
 const GET_SUBMIT_URL = 'http://localhost:5206/api/submission/getsubmit';
