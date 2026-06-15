@@ -6,21 +6,19 @@ import './EmployeeDetails.css';
 // ── Types ──────────────────────────────────────────────────────────
 interface EmpDetail {
   empId: string;
-  firstName: string;
-  lastName: string;
+  fullName: string;
   desg: string;
   project: string | null;
   grade: string | null;
-  email: string;
+  email: string | null;
   gender: string | null;
   doj: string | null;
-  managerEmpCode: string | null;
-  reportingManager: string | null;
-  personalPhoneNumber: string | null;
+  isOffboarding: boolean;
 }
 
 // ── Config ─────────────────────────────────────────────────────────
-const JWT_TOKEN = 'eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJEZWVwYWtLQGNsYXJpdW0udGVjaCIsImVtcElkIjoxMjI1LCJkZXNpZ25hdGlvbiI6IlRyYWluZWUgU29mdHdhcmUgRW5naW5lZXIiLCJpYXQiOjE3ODE1MTU2NjMsImV4cCI6MTc4MTUxOTI2M30.FF7jdkmmOJcFvnTQo7kyBhbZfj2ZbLWNMceOj_eVlupduWq4jm9ZLUWUl8TILELea-8GhX4eBeTUOE6KqXIS4g';
+// Uses the MANAGER token so /api/managerinfo returns the full team list
+const JWT_TOKEN = 'eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJBZ3VzdGluSmVuaWxSYWpQQGNsYXJpdW0udGVjaCIsImVtcElkIjoxMDgxLCJkZXNpZ25hdGlvbiI6IlRlY2huaWNhbCBMZWFkIiwiaWF0IjoxNzgxNTA5MTMzLCJleHAiOjE5ODE1MTI3MzN9.EG0UdmRFpgukHuboycJj6ofjSG2BltlXQG04iJVyHnaBDNtjuWkIgfJ2j5S26PSRaZ7j5FSshuAQ-ZTkBqqBHw';
 const MANAGER_INFO_URL = 'http://localhost:5206/api/managerinfo';
 
 const axiosInstance = axios.create({
@@ -28,25 +26,37 @@ const axiosInstance = axios.create({
   withCredentials: true,
 });
 
-const formatDate = (iso: string | null) => {
+const formatDate = (iso: string | null | undefined) => {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  const d = new Date(iso);
+  return isNaN(d.getTime())
+    ? iso
+    : new Date(iso).toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      });
 };
 
 // ── Component ──────────────────────────────────────────────────────
 const EmployeeDetails = () => {
   const { empId } = useParams<{ empId: string }>();
-  const navigate   = useNavigate();
-  const [emp, setEmp]       = useState<EmpDetail | null>(null);
+  const navigate  = useNavigate();
+
+  const [emp,     setEmp]     = useState<EmpDetail | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch the full team list from managerinfo and find this employee
+    if (!empId) return;
+
+    // Fetch the manager's team list and find this employee inside it.
+    // This uses the same manager token / endpoint as EmployeeRecord so
+    // the lookup is guaranteed to succeed for any direct report.
     axiosInstance
       .get(MANAGER_INFO_URL)
       .then((res) => {
         const member = res.data.totalMembers?.find(
-          (m: { empId: string }) => m.empId === empId
+          (m: EmpDetail) => m.empId === empId
         );
         if (member) setEmp(member as EmpDetail);
       })
@@ -57,7 +67,12 @@ const EmployeeDetails = () => {
   if (loading) return <div className="offui-ed-loading">Loading employee details…</div>;
   if (!emp)    return <div className="offui-ed-loading">Employee not found.</div>;
 
-  const fullName = `${emp.firstName || ''} ${emp.lastName || emp.empId}`.trim();
+  const initials = emp.fullName
+    .split(' ')
+    .map((w) => w[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
 
   return (
     <section className="offui-ed">
@@ -69,7 +84,7 @@ const EmployeeDetails = () => {
         </button>
         <div>
           <h1 className="offui-ed-title">Employee Details</h1>
-          <p className="offui-ed-subtitle">Viewing profile for {fullName}</p>
+          <p className="offui-ed-subtitle">Viewing profile for {emp.fullName}</p>
         </div>
       </div>
 
@@ -78,12 +93,13 @@ const EmployeeDetails = () => {
 
         {/* Avatar + name banner */}
         <div className="offui-ed-banner">
-          <div className="offui-ed-avatar">
-            {fullName.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()}
-          </div>
+          <div className="offui-ed-avatar">{initials}</div>
           <div>
-            <h2 className="offui-ed-name">{fullName}</h2>
-            <p className="offui-ed-role">{emp.desg} {emp.grade ? `· Grade ${emp.grade}` : ''}</p>
+            <h2 className="offui-ed-name">{emp.fullName}</h2>
+            <p className="offui-ed-role">
+              {emp.desg}
+              {emp.grade ? ` · Grade ${emp.grade}` : ''}
+            </p>
           </div>
         </div>
 
@@ -105,19 +121,19 @@ const EmployeeDetails = () => {
           </div>
           <div className="offui-ed-field">
             <label>Gender</label>
-            <input type="text" value={emp.gender || '—'} disabled />
+            <input type="text" value={emp.gender ?? '—'} disabled />
           </div>
           <div className="offui-ed-field">
             <label>Date of Joining</label>
             <input type="text" value={formatDate(emp.doj)} disabled />
           </div>
           <div className="offui-ed-field">
-            <label>Phone</label>
-            <input type="text" value={emp.personalPhoneNumber || '—'} disabled />
-          </div>
-          <div className="offui-ed-field offui-ed-field--full">
-            <label>Reporting Manager</label>
-            <input type="text" value={emp.reportingManager ?? '—'} disabled />
+            <label>Status</label>
+            <input
+              type="text"
+              value={emp.isOffboarding ? 'Offboarding' : 'Active'}
+              disabled
+            />
           </div>
         </div>
 

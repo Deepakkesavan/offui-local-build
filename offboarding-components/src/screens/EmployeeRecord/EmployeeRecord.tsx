@@ -2,14 +2,18 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import ProcessTimeline from '../../components/ProcessTimeline/processTimeline';
+import OffuiCards from '../../components/Cards/offuiCards';
+import OffuiForms from '../../components/StepperForm/offuiForms';
 import processTimelineData, {
   type TimelineItem,
 } from '../../components/ProcessTimeline/processTimelineData';
+import type { FormField } from '../../components/StepperForm/offuiFormData';
 import './EmployeeRecord.css';
 
 // ── Types ──────────────────────────────────────────────────────────
 interface SubmissionInfo {
   isSubmitted: boolean;
+  submissionLogId?: string | null;
   employeeId: string | null;
   action: string | null;
   performedBy: string | null;
@@ -17,7 +21,6 @@ interface SubmissionInfo {
   stageAfter: string | null;
   time: string | null;
   date: string | null;
-  submissionLogId?: string;
 }
 
 interface ApprovalInfo {
@@ -39,9 +42,7 @@ interface TeamMember {
   gender: string | null;
   doj: string | null;
   isOffboarding: boolean;
-  submissionLogId: string | null;
   resignationDate: string | null;
-  isManagerApproved: boolean;
 }
 
 // ── Config ─────────────────────────────────────────────────────────
@@ -57,72 +58,102 @@ const axiosInstance = axios.create({
 const formatDate = (iso: string | null | undefined) => {
   if (!iso) return '—';
   const d = new Date(iso);
-  return isNaN(d.getTime()) ? iso : `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}/${d.getFullYear()}`;
+  return isNaN(d.getTime())
+    ? iso
+    : `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}/${d.getFullYear()}`;
+};
+
+/** Maps raw backend action codes to readable labels */
+const formatAction = (action: string | null | undefined): string => {
+  if (!action) return 'Resignation submitted via offboarding portal';
+  const map: Record<string, string> = {
+    record_created:   'Resignation submitted via offboarding portal',
+    exit_interview:   'Exit interview completed',
+    manager_approved: 'Approved by reporting manager',
+    hr_initiation:    'HR initiation in progress',
+  };
+  return map[action] ?? action;
 };
 
 // ── Component ──────────────────────────────────────────────────────
 const EmployeeRecord = () => {
-  const { empId }  = useParams<{ empId: string }>();
-  const navigate   = useNavigate();
+  const { empId } = useParams<{ empId: string }>();
+  const navigate  = useNavigate();
 
-  const [member,      setMember]      = useState<TeamMember | null>(null);
-  const [submission,  setSubmission]  = useState<SubmissionInfo | null>(null);
-  const [approval,    setApproval]    = useState<ApprovalInfo | null>(null);
-  const [managerInfo, setManagerInfo] = useState<{ empId: string; fullName: string } | null>(null);
-  const [comments,    setComments]    = useState('');
-  const [submitting,  setSubmitting]  = useState(false);
-  const [timeline,    setTimeline]    = useState<TimelineItem[]>(processTimelineData);
-  const [loading,     setLoading]     = useState(true);
+  const [member,       setMember]       = useState<TeamMember | null>(null);
+  const [submission,   setSubmission]   = useState<SubmissionInfo | null>(null);
+  const [approval,     setApproval]     = useState<ApprovalInfo | null>(null);
+  const [managerInfo,  setManagerInfo]  = useState<{ empId: string; fullName: string } | null>(null);
+  const [submitting,   setSubmitting]   = useState(false);
+  const [timeline,     setTimeline]     = useState<TimelineItem[]>(processTimelineData);
+  const [loading,      setLoading]      = useState(true);
+  const [approveError, setApproveError] = useState('');
 
   useEffect(() => {
     if (!empId) return;
 
-    // 1. Get team member + manager info
-    axiosInstance.get(MANAGER_INFO_URL).then((res) => {
-      const mgr = res.data;
-      setManagerInfo({ empId: mgr.empId, fullName: mgr.fullName });
+    // 1. Fetch manager info + locate the team member
+    axiosInstance
+      .get(MANAGER_INFO_URL)
+      .then((res) => {
+        const mgr = res.data;
+        setManagerInfo({ empId: mgr.empId, fullName: mgr.fullName });
 
-      const found: TeamMember = mgr.totalMembers?.find(
-        (m: TeamMember) => m.empId === empId
-      );
-      if (!found) return;
-      setMember(found);
+        const found: TeamMember | undefined = mgr.totalMembers?.find(
+          (m: TeamMember) => m.empId === empId
+        );
+        if (found) setMember(found);
+      })
+      .catch(console.error);
 
-      // 2. Get submission details
-      if (found.submissionLogId) {
-        // Get approval status
-        axiosInstance
-          .get<ApprovalInfo>(`${BASE_URL}/api/GetApproveOffboarding/${found.submissionLogId}`)
-          .then((r) => {
-            setApproval(r.data);
-            if (r.data.isApproved) {
-              setTimeline(processTimelineData);
-            }
-          })
-          .catch(console.error);
-      }
+    // 2. Fetch submission — returns submissionLogId from the updated backend
+    axiosInstance
+      .get<SubmissionInfo>(`${BASE_URL}/api/submission/getsubmit?employeeId=${empId}`)
+      .then((r) => {
+        setSubmission(r.data);
 
-      // Get submission log details
-      axiosInstance
-        .get<SubmissionInfo>(`${BASE_URL}/api/submission/getsubmit?employeeId=${empId}`)
-        .then((r) => setSubmission(r.data))
-        .catch(console.error);
-    })
-    .catch(console.error)
-    .finally(() => setLoading(false));
+        // 3. If submitted, check approval status using the logId
+        const logId = r.data.submissionLogId;
+        if (r.data.isSubmitted && logId) {
+          axiosInstance
+            .get<ApprovalInfo>(`${BASE_URL}/api/GetApproveOffboarding/${logId}`)
+            .then((ar) => {
+              setApproval(ar.data);
+              if (ar.data.isApproved) {
+                setTimeline((prev) =>
+                  prev.map((item, idx) =>
+                    idx === 0 ? { ...item, status: 'completed' } : item
+                  )
+                );
+              }
+            })
+            .catch(console.error);
+        }
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, [empId]);
 
-  const handleApprove = async () => {
-    if (!member || !member.submissionLogId || !managerInfo) return;
+  // ── Approve handler ────────────────────────────────────────────
+  const handleApprove = async (formData: Record<string, string>) => {
+    if (!member || !managerInfo) return;
+
+    const submissionLogId = submission?.submissionLogId;
+    if (!submissionLogId) {
+      setApproveError('Cannot approve: no resignation submission found for this employee.');
+      return;
+    }
+
     setSubmitting(true);
+    setApproveError('');
 
     try {
       const payload = {
-        submissionLogId:  member.submissionLogId,
+        submissionLogId,
         employeeId:       member.empId,
         managerEmpId:     managerInfo.empId,
         managerName:      managerInfo.fullName,
-        managerComments:  comments.trim() || null,
+        managerComments:  formData.managerComments?.trim() || null,
         employeeName:     member.fullName,
         designation:      member.desg,
         department:       member.project ?? null,
@@ -135,9 +166,29 @@ const EmployeeRecord = () => {
 
       if (res.status === 201) {
         setApproval({ isApproved: true, data: res.data });
-        setTimeline(processTimelineData);
+        setTimeline((prev) =>
+          prev.map((item, idx) =>
+            idx === 0 ? { ...item, status: 'completed' } : item
+          )
+        );
       }
-    } catch (err) {
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string }; status?: number } };
+      if (axiosErr.response?.status === 409) {
+        setApproveError('This resignation has already been approved.');
+        if (submission?.submissionLogId) {
+          axiosInstance
+            .get<ApprovalInfo>(
+              `${BASE_URL}/api/GetApproveOffboarding/${submission.submissionLogId}`
+            )
+            .then((r) => setApproval(r.data))
+            .catch(console.error);
+        }
+      } else {
+        setApproveError(
+          axiosErr.response?.data?.message ?? 'Approval failed. Please try again.'
+        );
+      }
       console.error('Approval failed:', err);
     } finally {
       setSubmitting(false);
@@ -149,6 +200,71 @@ const EmployeeRecord = () => {
 
   const alreadyApproved = approval?.isApproved === true;
 
+  // ── Form fields ────────────────────────────────────────────────
+  // fullWidth is set explicitly per field so the grid looks correct:
+  //   Row 1: Employee Name | Employee ID
+  //   Row 2: Department    | Resignation Date
+  //   Row 3: Last Working Day (half) | [empty half]
+  //   Row 4: Reason for Leaving      (full — textarea)
+  //   Row 5: Manager's Comments      (full — textarea)
+  const formFields: FormField[] = [
+    {
+      name:      'employeeName',
+      label:     'Employee Name',
+      type:      'text',
+      value:     member.fullName,
+      fullWidth: false,
+    },
+    {
+      name:      'employeeId',
+      label:     'Employee ID',
+      type:      'text',
+      value:     member.empId,
+      fullWidth: false,
+    },
+    {
+      name:      'department',
+      label:     'Department / Project',
+      type:      'text',
+      value:     member.project ?? '—',
+      fullWidth: false,
+    },
+    {
+      name:      'resignationDate',
+      label:     'Resignation Date',
+      type:      'text',
+      value:     formatDate(member.resignationDate),
+      fullWidth: false,
+    },
+    {
+      name:      'lastWorkingDay',
+      label:     'Last Working Day',
+      type:      'text',
+      value:     '—',
+      fullWidth: false,   // ← explicit false keeps it half-width
+    },
+    {
+      name:      'reasonForLeaving',
+      label:     'Reason for Leaving',
+      type:      'textarea',
+      // Human-readable label instead of raw action code
+      value:     formatAction(submission?.action),
+      fullWidth: true,
+    },
+    {
+      name:        'managerComments',
+      label:       "Manager's Final Comments",
+      type:        'textarea',
+      placeholder: 'Enter any final notes regarding this offboarding request…',
+      fullWidth:   true,
+      // When approved: pass the saved comments as value → triggers the readOnly guard
+      // When pending:  leave value undefined → field stays editable
+      value: alreadyApproved
+        ? (approval?.data?.managerComments ?? '(No comments provided)')
+        : undefined,
+    },
+  ];
+
   return (
     <section className="offui-er">
 
@@ -158,95 +274,48 @@ const EmployeeRecord = () => {
         <ProcessTimeline items={timeline} />
       </div>
 
-      {/* Right — Employee Details Review */}
+      {/* Right */}
       <div className="offui-er-right">
 
-        <div className="offui-er-form-card">
-          <h2 className="offui-er-form-title">Employee Details Review</h2>
-          <p className="offui-er-form-subtitle">
-            Verify the core information and provide your final approval comments.
-          </p>
+        {/* Form */}
+        <OffuiForms
+          title="Employee Details Review"
+          subtitle={
+            alreadyApproved
+              ? 'This offboarding has been approved. All fields are locked.'
+              : 'Verify the core information and provide your final approval comments.'
+          }
+          submitLabel={
+            alreadyApproved
+              ? 'Approved ✓'
+              : submitting
+              ? 'Approving…'
+              : '✓ Approve Offboarding'
+          }
+          fields={formFields}
+          onSubmit={alreadyApproved ? () => {} : handleApprove}
+          submitDisabled={alreadyApproved || submitting}
+        />
 
-          <div className="offui-er-grid">
-            {/* Row 1 */}
-            <div className="offui-er-field">
-              <label>Employee Name</label>
-              <input type="text" value={member.fullName} disabled />
-            </div>
-            <div className="offui-er-field">
-              <label>Employee ID</label>
-              <input type="text" value={member.empId} disabled />
-            </div>
-
-            {/* Row 2 */}
-            <div className="offui-er-field offui-er-field--full">
-              <label>Department / Project</label>
-              <input type="text" value={member.project ?? '—'} disabled />
-            </div>
-
-            {/* Row 3 */}
-            <div className="offui-er-field">
-              <label>Resignation Date</label>
-              <input type="text" value={formatDate(member.resignationDate)} disabled />
-            </div>
-            <div className="offui-er-field">
-              <label>Last Working Day</label>
-              <input type="text" value="—" disabled />
-            </div>
-
-            {/* Row 4 */}
-            <div className="offui-er-field offui-er-field--full">
-              <label>Reason for Leaving</label>
-              <textarea
-                value={submission?.action ?? 'Resignation submitted via offboarding portal'}
-                disabled
-                rows={3}
-              />
-            </div>
-
-            {/* Row 5 — Manager comments (editable unless already approved) */}
-            <div className="offui-er-field offui-er-field--full">
-              <label>Manager's Final Comments</label>
-              {alreadyApproved ? (
-                <textarea
-                  value={approval?.data?.managerComments ?? '(No comments provided)'}
-                  disabled
-                  rows={4}
-                />
-              ) : (
-                <textarea
-                  placeholder="Enter any final notes regarding this offboarding request…"
-                  value={comments}
-                  onChange={(e) => setComments(e.target.value)}
-                  rows={4}
-                />
-              )}
+        {/* Approval error banner */}
+        {approveError && (
+          <div className="offui-er-alert">
+            <span className="offui-er-alert-icon">⚠</span>
+            <div>
+              <p className="offui-er-alert-title">Approval Error</p>
+              <p className="offui-er-alert-body">{approveError}</p>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Info cards */}
         <div className="offui-er-info-cards">
-          <div className="offui-er-info-card">
-            <div className="offui-er-info-icon offui-er-info-icon--teal">🗓</div>
-            <div>
-              <p className="offui-er-info-label">Notice Period</p>
-              <p className="offui-er-info-value">30 Days</p>
-              <p className="offui-er-info-sub">STANDARD POLICY</p>
-            </div>
-          </div>
-          <div className="offui-er-info-card">
-            <div className="offui-er-info-icon offui-er-info-icon--grey">✂</div>
-            <div>
-              <p className="offui-er-info-label">Vacation Balance</p>
-              <p className="offui-er-info-value">8.5 Days</p>
-              <p className="offui-er-info-sub">TO BE ENCASHED</p>
-            </div>
-          </div>
+          <OffuiCards title="Notice Period"    value="30 Days"  subtitle="Standard policy" />
+          <OffuiCards title="Vacation Balance" value="8.5 Days" subtitle="To be encashed" />
         </div>
 
-        {/* Action area */}
-        {alreadyApproved ? (
+        {/* Approved confirmation */}
+        {alreadyApproved && (
           <div className="offui-er-approved-card">
             <span className="offui-er-approved-icon">✓</span>
             <div>
@@ -256,32 +325,25 @@ const EmployeeRecord = () => {
               </p>
             </div>
           </div>
-        ) : (
+        )}
+
+        {/* Clarify — only before approval */}
+        {!alreadyApproved && (
           <div className="offui-er-actions">
-            <button
-              className="offui-er-approve-btn"
-              onClick={handleApprove}
-              disabled={submitting}
-            >
-              {submitting ? 'Approving…' : '✓ Approve Offboarding'}
-            </button>
-            <button
-              className="offui-er-clarify-btn"
-              onClick={() => navigate(-1)}
-            >
+            <button className="offui-er-clarify-btn" onClick={() => navigate(-1)}>
               ✉ Request Clarification
             </button>
           </div>
         )}
 
-        {/* High priority alert */}
+        {/* Access alert */}
         <div className="offui-er-alert">
           <span className="offui-er-alert-icon">⚠</span>
           <div>
             <p className="offui-er-alert-title">High Priority Access Alert</p>
             <p className="offui-er-alert-body">
-              {member.fullName} currently has system access that requires manual decommissioning
-              by the IT department before final sign-off.
+              {member.fullName} currently has system access that requires manual
+              decommissioning by the IT department before final sign-off.
             </p>
           </div>
         </div>

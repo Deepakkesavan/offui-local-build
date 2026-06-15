@@ -2,34 +2,28 @@ import React, { useState } from 'react';
 import './offuiForms.css';
 import { type FormComponentProps } from './offuiFormData';
 
-
 const offuiForms: React.FC<FormComponentProps> = ({
   title,
   subtitle,
   fields,
   submitLabel,
   onSubmit,
+  submitDisabled = false,
 }) => {
   const initialValues = fields.reduce<Record<string, string>>(
-  (acc, field) => {
-    acc[field.name] = field.value ?? '';
-    return acc;
-  },
-  {}
-);
+    (acc, field) => {
+      acc[field.name] = field.value ?? '';
+      return acc;
+    },
+    {}
+  );
 
-  const [formData, setFormData] =
-  useState<Record<string, string>>(initialValues);
+  const [formData, setFormData] = useState<Record<string, string>>(initialValues);
 
   const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const submitForm = (e: React.FormEvent) => {
@@ -46,21 +40,22 @@ const offuiForms: React.FC<FormComponentProps> = ({
 
       <div className="offui-form-grid">
         {fields.map((field) => {
+          // A field is read-only when a non-empty value prop is explicitly provided
           const readOnly =
             field.value !== null &&
             field.value !== undefined &&
             field.value !== '';
 
-          const fullWidth =
-            field.type === 'textarea' ||
-            field.type === 'select';
+          // fullWidth: honour explicit prop; default true for textarea/select, false otherwise
+          const isFullWidth =
+            field.fullWidth !== undefined
+              ? field.fullWidth
+              : field.type === 'textarea' || field.type === 'select';
 
           return (
             <div
               key={field.name}
-              className={`offui-field ${
-                fullWidth ? 'full-width' : ''
-              }`}
+              className={`offui-field ${isFullWidth ? 'full-width' : ''}`}
             >
               <label>{field.label}</label>
 
@@ -81,6 +76,7 @@ const offuiForms: React.FC<FormComponentProps> = ({
                   name={field.name}
                   value={formData[field.name]}
                   onChange={handleChange}
+                  disabled={readOnly}
                 />
               )}
 
@@ -89,17 +85,11 @@ const offuiForms: React.FC<FormComponentProps> = ({
                   name={field.name}
                   value={formData[field.name]}
                   onChange={handleChange}
+                  disabled={readOnly}
                 >
-                  <option value="">
-                    {field.placeholder}
-                  </option>
-
-                  {field.options?.map(
-  (option: { label: string; value: string }) => (
-                    <option
-                      key={option.value}
-                      value={option.value}
-                    >
+                  <option value="">{field.placeholder}</option>
+                  {field.options?.map((option) => (
+                    <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
                   ))}
@@ -113,6 +103,7 @@ const offuiForms: React.FC<FormComponentProps> = ({
                   placeholder={field.placeholder}
                   onChange={handleChange}
                   rows={5}
+                  disabled={readOnly}
                 />
               )}
             </div>
@@ -124,6 +115,7 @@ const offuiForms: React.FC<FormComponentProps> = ({
         <button
           type="submit"
           className="offui-submit-btn"
+          disabled={submitDisabled}
         >
           {submitLabel}
         </button>

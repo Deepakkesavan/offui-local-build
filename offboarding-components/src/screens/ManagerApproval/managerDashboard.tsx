@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import OffuiCards from '../../components/Cards/offuiCards';
 import './managerDashboard.css';
@@ -14,6 +15,7 @@ interface TeamMember {
   gender: string | null;
   doj: string | null;
   isOffboarding: boolean;
+  resignationDate?: string | null;
 }
 
 interface ManagerInfo {
@@ -46,7 +48,7 @@ const axiosInstance = axios.create({
 const initials = (name: string) =>
   name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
 
-const formatDate = (iso: string | null) => {
+const formatDate = (iso: string | null | undefined) => {
   if (!iso) return '—';
   return new Date(iso).toLocaleDateString('en-GB', {
     day: '2-digit', month: 'short', year: 'numeric',
@@ -55,6 +57,7 @@ const formatDate = (iso: string | null) => {
 
 // ── Component ──────────────────────────────────────────────────────
 const ManagerDashboard = () => {
+  const navigate = useNavigate();
   const [info, setInfo]       = useState<ManagerInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState('');
@@ -79,9 +82,17 @@ const ManagerDashboard = () => {
 
   const buildPages = (): (number | '...')[] => {
     if (totalPages <= 5) return Array.from({ length: totalPages }, (_, i) => i + 1);
-    if (page <= 3)           return [1, 2, 3, '...', totalPages];
-    if (page >= totalPages - 2) return [1, '...', totalPages - 2, totalPages - 1, totalPages];
+    if (page <= 3)               return [1, 2, 3, '...', totalPages];
+    if (page >= totalPages - 2)  return [1, '...', totalPages - 2, totalPages - 1, totalPages];
     return [1, '...', page - 1, page, page + 1, '...', totalPages];
+  };
+
+  const handleRowAction = (member: TeamMember) => {
+    if (member.isOffboarding) {
+      navigate(`/OffboardingRecord/${member.empId}`);
+    } else {
+      navigate(`/EmployeeDetails/${member.empId}`);
+    }
   };
 
   // ── Not a manager ───────────────────────────────────────────────
@@ -141,7 +152,9 @@ const ManagerDashboard = () => {
           <span>Role</span>
           <span>Project</span>
           <span>Joined</span>
+          <span>Resignation Date</span>
           <span>Status</span>
+          <span>Action</span>
         </div>
 
         {/* Body */}
@@ -169,6 +182,11 @@ const ManagerDashboard = () => {
               <span className="offui-md-cell-text">{member.project ?? '—'}</span>
               <span className="offui-md-cell-text">{formatDate(member.doj)}</span>
 
+              {/* Resignation Date — empty dash for active employees */}
+              <span className="offui-md-cell-text">
+                {member.isOffboarding ? formatDate(member.resignationDate) : '—'}
+              </span>
+
               {/* Status badge */}
               <span
                 className={`offui-md-badge ${
@@ -179,6 +197,17 @@ const ManagerDashboard = () => {
               >
                 {member.isOffboarding ? 'Offboarding' : 'Active'}
               </span>
+
+              {/* Action button */}
+              <button
+                className={`offui-md-action-btn ${
+                  member.isOffboarding ? 'offui-md-action-btn--offboarding' : ''
+                }`}
+                onClick={() => handleRowAction(member)}
+              >
+                {member.isOffboarding ? 'View Record' : 'View Details'}
+              </button>
+
             </div>
           ))
         )}

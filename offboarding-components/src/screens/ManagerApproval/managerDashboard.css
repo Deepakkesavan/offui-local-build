@@ -47,10 +47,16 @@
   overflow: hidden;
 }
 
+/* 8-column grid: Employee | EmpID | Role | Project | Joined | Resignation Date | Status | Action */
+.offui-md-table-header,
+.offui-md-table-row {
+  display: grid;
+  grid-template-columns: 2.2fr 1fr 1.2fr 1.1fr 1.1fr 1.3fr 1fr 1.1fr;
+  align-items: center;
+}
+
 /* Table header row */
 .offui-md-table-header {
-  display: grid;
-  grid-template-columns: 2.5fr 1.2fr 1.4fr 1.4fr 1.2fr 1.6fr;
   padding: 12px 20px;
   background: #f9fafb;
   border-bottom: 1px solid #e4e7ec;
@@ -67,9 +73,6 @@
 
 /* Each employee row */
 .offui-md-table-row {
-  display: grid;
-  grid-template-columns: 2.5fr 1.2fr 1.4fr 1.4fr 1.2fr 1.6fr;
-  align-items: center;
   padding: 16px 20px;
   border-bottom: 1px solid #f2f4f7;
   transition: background 0.15s;
@@ -149,25 +152,38 @@
   color: #b54708;
 }
 
-/* Action button */
+/* Action buttons */
 .offui-md-action-btn {
-  height: 36px;
-  padding: 0 16px;
+  height: 34px;
+  padding: 0 14px;
   border: 1px solid #d0d5dd;
   border-radius: 4px;
   background: #ffffff;
   cursor: pointer;
   font-family: Inter, sans-serif;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   color: #344054;
-  transition: background 0.15s, border-color 0.15s;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  white-space: nowrap;
 }
 
 .offui-md-action-btn:hover {
   background: #f9fafb;
   border-color: #005a58;
   color: #005a58;
+}
+
+/* Offboarding action button gets a teal tint to stand out */
+.offui-md-action-btn--offboarding {
+  border-color: #005a58;
+  color: #005a58;
+  background: #f0fafa;
+}
+
+.offui-md-action-btn--offboarding:hover {
+  background: #005a58;
+  color: #ffffff;
 }
 
 /* Pagination footer */
