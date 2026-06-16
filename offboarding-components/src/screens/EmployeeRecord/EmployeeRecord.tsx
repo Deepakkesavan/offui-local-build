@@ -1,161 +1,18 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import ProcessTimeline from '../../components/ProcessTimeline/processTimeline';
 import OffuiCards from '../../components/Cards/offuiCards';
 import OffuiForms from '../../components/StepperForm/offuiForms';
-import defaultTimelineData, {
-  type TimelineItem,
-} from '../../components/ProcessTimeline/processTimelineData';
+import defaultTimelineData, { type TimelineItem } from '../../components/ProcessTimeline/processTimelineData';
 import type { FormField } from '../../components/StepperForm/offuiFormData';
+import type { TeamMember, SubmissionInfo, ApprovalInfo } from '../../types';
+import { createApiClient } from '../../utils/apiClient';
+import { buildTimeline, formatDateMDY, formatAction } from '../../utils';
+import { API_ENDPOINTS } from '../../config/api';
 import './EmployeeRecord.css';
 
-// ── Types ──────────────────────────────────────────────────────────
-interface SubmissionInfo {
-  isSubmitted: boolean;
-  submissionLogId?: string | null;
-  employeeId: string | null;
-  action: string | null;
-  performedBy: string | null;
-  stageBefore: string | null;
-  stageAfter: string | null;
-  time: string | null;
-  date: string | null;        // "YYYY-MM-DD" — used for Final Day
-}
+const api = createApiClient('manager');
 
-interface ApprovalInfo {
-  isApproved: boolean;
-  data?: {
-    id: string;
-    managerComments: string | null;
-    approvedAt: string;
-  };
-}
-
-interface TeamMember {
-  empId: string;
-  fullName: string;
-  desg: string;
-  project: string | null;
-  grade: string | null;
-  email: string | null;
-  gender: string | null;
-  doj: string | null;
-  isOffboarding: boolean;
-  resignationDate: string | null;
-}
-
-// ── Config ─────────────────────────────────────────────────────────
-const JWT_TOKEN = 'eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhZ3VzdGluamVuaWxyYWpwQGNsYXJpdW0udGVjaCIsImVtcElkIjoxMDgxLCJkZXNpZ25hdGlvbiI6IlRlY2huaWNhbCBMZWFkIiwiaWF0IjoxNzgxNTA5MTMzLCJleHAiOjE4ODE1MTI3MzN9.olD9wXz3AT4e38U8MwIai_cNHaKRHSgV83CRAr8HN1oyhpD7WyszZ3lmZgjMfjYUEf-hA8z7uSjPgFIT1X5G1w';
-const BASE_URL         = 'http://localhost:5206';
-const MANAGER_INFO_URL = `${BASE_URL}/api/managerinfo`;
-
-const axiosInstance = axios.create({
-  headers: { Authorization: `Bearer ${JWT_TOKEN}` },
-  withCredentials: true,
-});
-
-// ── Helpers ────────────────────────────────────────────────────────
-const formatDate = (iso: string | null | undefined) => {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  return isNaN(d.getTime())
-    ? iso
-    : `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}/${d.getFullYear()}`;
-};
-
-/** Add 30 days to a date string and return a readable label */
-const calcFinalDay = (submissionDate: string | null): string => {
-  if (!submissionDate) return 'Not yet scheduled';
-  const d = new Date(submissionDate);
-  if (isNaN(d.getTime())) return 'Not yet scheduled';
-  d.setDate(d.getDate() + 30);
-  return `Scheduled for ${d.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  })}`;
-};
-
-/** Maps raw backend action codes to readable labels */
-const formatAction = (action: string | null | undefined): string => {
-  if (!action) return 'Resignation submitted via offboarding portal';
-  const map: Record<string, string> = {
-    record_created:   'Resignation submitted via offboarding portal',
-    exit_interview:   'Exit interview completed',
-    manager_approved: 'Approved by reporting manager',
-    hr_initiation:    'HR initiation in progress',
-  };
-  return map[action] ?? action;
-};
-
-/**
- * Builds the timeline array from current known state.
- *
- * Index map (matches processTimelineData order):
- *   0 — Resignation Submitted
- *   1 — Reporting Manager Approval
- *   2 — Offboarding Initiated
- *   3 — IT Department Approval
- *   4 — Admin Approval
- *   5 — Finance Approval
- *   6 — HR Approval
- *   7 — Final Day
- */
-const buildTimeline = (
-  isSubmitted: boolean,
-  submissionDate: string | null,
-  isManagerApproved: boolean,
-  approvedAt: string | null,
-): TimelineItem[] => {
-  const items: TimelineItem[] = defaultTimelineData.map((item) => ({ ...item }));
-
-  // ── Stage 0: Resignation Submitted ──
-  if (isSubmitted) {
-    items[0] = {
-      ...items[0],
-      status: 'completed',
-      subtitle: submissionDate
-        ? `Submitted on ${formatDate(submissionDate)}`
-        : 'Submitted',
-    };
-  }
-
-  // ── Stage 1: Reporting Manager Approval ──
-  if (isSubmitted && !isManagerApproved) {
-    items[1] = {
-      ...items[1],
-      status: 'in-progress',
-      subtitle: 'Awaiting manager approval',
-    };
-  }
-
-  if (isManagerApproved) {
-    items[1] = {
-      ...items[1],
-      status: 'completed',
-      subtitle: approvedAt
-        ? `Approved on ${formatDate(approvedAt)}`
-        : 'Manager approved',
-    };
-    // Stage 2 becomes in-progress once manager has approved
-    items[2] = {
-      ...items[2],
-      status: 'in-progress',
-      subtitle: 'Pending HR Initiation',
-    };
-  }
-
-  // ── Stage 7: Final Day — set from submission date + 30 days ──
-  items[7] = {
-    ...items[7],
-    subtitle: calcFinalDay(submissionDate),
-  };
-
-  return items;
-};
-
-// ── Component ──────────────────────────────────────────────────────
 const EmployeeRecord = () => {
   const { empId } = useParams<{ empId: string }>();
   const navigate  = useNavigate();
@@ -169,22 +26,24 @@ const EmployeeRecord = () => {
   const [loading,      setLoading]      = useState(true);
   const [approveError, setApproveError] = useState('');
 
-  // Rebuild timeline whenever submission or approval state changes
+  // Rebuild timeline when submission / approval state changes
   useEffect(() => {
-    const isSubmitted      = submission?.isSubmitted ?? false;
-    const submissionDate   = submission?.date ?? null;
-    const isManagerApproved = approval?.isApproved ?? false;
-    const approvedAt       = approval?.data?.approvedAt ?? null;
-
-    setTimeline(buildTimeline(isSubmitted, submissionDate, isManagerApproved, approvedAt));
+    setTimeline(
+      buildTimeline(
+        submission?.isSubmitted ?? false,
+        submission?.date ?? null,
+        approval?.isApproved ?? false,
+        approval?.data?.approvedAt ?? null,
+      )
+    );
   }, [submission, approval]);
 
   useEffect(() => {
     if (!empId) return;
 
-    // 1. Fetch manager info + locate the team member
-    axiosInstance
-      .get(MANAGER_INFO_URL)
+    // 1. Manager info + locate team member
+    api
+      .get(API_ENDPOINTS.managerInfo)
       .then((res) => {
         const mgr = res.data;
         setManagerInfo({ empId: mgr.empId, fullName: mgr.fullName });
@@ -195,17 +54,17 @@ const EmployeeRecord = () => {
       })
       .catch(console.error);
 
-    // 2. Fetch submission — returns submissionLogId from the updated backend
-    axiosInstance
-      .get<SubmissionInfo>(`${BASE_URL}/api/submission/getsubmit?employeeId=${empId}`)
+    // 2. Submission status
+    api
+      .get<SubmissionInfo>(`${API_ENDPOINTS.getSubmit}?employeeId=${empId}`)
       .then((r) => {
         setSubmission(r.data);
 
-        // 3. If submitted, check approval status
+        // 3. Approval status
         const logId = r.data.submissionLogId;
         if (r.data.isSubmitted && logId) {
-          axiosInstance
-            .get<ApprovalInfo>(`${BASE_URL}/api/GetApproveOffboarding/${logId}`)
+          api
+            .get<ApprovalInfo>(API_ENDPOINTS.getApproval(logId))
             .then((ar) => setApproval(ar.data))
             .catch(console.error);
         }
@@ -242,7 +101,7 @@ const EmployeeRecord = () => {
         reasonForLeaving: null,
       };
 
-      const res = await axiosInstance.post(`${BASE_URL}/api/ApproveOffboarding`, payload);
+      const res = await api.post(API_ENDPOINTS.approveOffboarding, payload);
 
       if (res.status === 201) {
         setApproval({ isApproved: true, data: res.data });
@@ -252,10 +111,8 @@ const EmployeeRecord = () => {
       if (axiosErr.response?.status === 409) {
         setApproveError('This resignation has already been approved.');
         if (submission?.submissionLogId) {
-          axiosInstance
-            .get<ApprovalInfo>(
-              `${BASE_URL}/api/GetApproveOffboarding/${submission.submissionLogId}`
-            )
+          api
+            .get<ApprovalInfo>(API_ENDPOINTS.getApproval(submission.submissionLogId))
             .then((r) => setApproval(r.data))
             .catch(console.error);
         }
@@ -264,7 +121,6 @@ const EmployeeRecord = () => {
           axiosErr.response?.data?.message ?? 'Approval failed. Please try again.'
         );
       }
-      console.error('Approval failed:', err);
     } finally {
       setSubmitting(false);
     }
@@ -275,32 +131,13 @@ const EmployeeRecord = () => {
 
   const alreadyApproved = approval?.isApproved === true;
 
-  // ── Form fields ────────────────────────────────────────────────
   const formFields: FormField[] = [
-    {
-      name: 'employeeName', label: 'Employee Name',
-      type: 'text', value: member.fullName, fullWidth: false,
-    },
-    {
-      name: 'employeeId', label: 'Employee ID',
-      type: 'text', value: member.empId, fullWidth: false,
-    },
-    {
-      name: 'department', label: 'Department / Project',
-      type: 'text', value: member.project ?? '—', fullWidth: false,
-    },
-    {
-      name: 'resignationDate', label: 'Resignation Date',
-      type: 'text', value: formatDate(member.resignationDate), fullWidth: false,
-    },
-    {
-      name: 'lastWorkingDay', label: 'Last Working Day',
-      type: 'text', value: '—', fullWidth: false,
-    },
-    {
-      name: 'reasonForLeaving', label: 'Reason for Leaving',
-      type: 'textarea', value: formatAction(submission?.action), fullWidth: true,
-    },
+    { name: 'employeeName',    label: 'Employee Name',           type: 'text',     value: member.fullName,                                     fullWidth: false },
+    { name: 'employeeId',      label: 'Employee ID',             type: 'text',     value: member.empId,                                        fullWidth: false },
+    { name: 'department',      label: 'Department / Project',    type: 'text',     value: member.project ?? '—',                               fullWidth: false },
+    { name: 'resignationDate', label: 'Resignation Date',        type: 'text',     value: formatDateMDY(member.resignationDate),               fullWidth: false },
+    { name: 'lastWorkingDay',  label: 'Last Working Day',        type: 'text',     value: '—',                                                 fullWidth: false },
+    { name: 'reasonForLeaving',label: 'Reason for Leaving',      type: 'textarea', value: formatAction(submission?.action),                    fullWidth: true  },
     {
       name: 'managerComments',
       label: "Manager's Final Comments",
@@ -361,7 +198,7 @@ const EmployeeRecord = () => {
             <div>
               <p className="offui-er-approved-title">You have approved this offboarding</p>
               <p className="offui-er-approved-sub">
-                Approved on {formatDate(approval?.data?.approvedAt ?? null)} · Waiting for HR Initiation
+                Approved on {formatDateMDY(approval?.data?.approvedAt ?? null)} · Waiting for HR Initiation
               </p>
             </div>
           </div>

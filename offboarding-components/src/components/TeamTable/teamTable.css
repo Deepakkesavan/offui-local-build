@@ -1,0 +1,216 @@
+/* ── Table shell ────────────────────────────────────────────────── */
+.offui-tt {
+  background: #ffffff;
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* 8-column grid: Employee | EmpID | Role | Project | Joined | Resignation Date | Status | Action */
+.offui-tt-header,
+.offui-tt-row {
+  display: grid;
+  grid-template-columns: 2.2fr 1fr 1.2fr 1.1fr 1.1fr 1.3fr 1fr 1.1fr;
+  align-items: center;
+}
+
+/* ── Header ─────────────────────────────────────────────────────── */
+.offui-tt-header {
+  padding: 12px 20px;
+  background: #f9fafb;
+  border-bottom: 1px solid #e4e7ec;
+}
+
+.offui-tt-header span {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  color: #667085;
+  text-transform: uppercase;
+}
+
+/* ── Body rows ──────────────────────────────────────────────────── */
+.offui-tt-row {
+  padding: 16px 20px;
+  border-bottom: 1px solid #f2f4f7;
+  transition: background 0.15s;
+}
+
+.offui-tt-row:last-child {
+  border-bottom: none;
+}
+
+.offui-tt-row:hover {
+  background: #f9fafb;
+}
+
+/* ── Employee name + avatar cell ────────────────────────────────── */
+.offui-tt-emp-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.offui-tt-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #e0f2f1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #005a58;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+
+.offui-tt-emp-name {
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #101828;
+  margin: 0;
+}
+
+.offui-tt-emp-email {
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  color: #667085;
+  margin: 2px 0 0;
+}
+
+/* ── Generic cell ───────────────────────────────────────────────── */
+.offui-tt-cell {
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  color: #344054;
+}
+
+/* ── Status badges ──────────────────────────────────────────────── */
+.offui-tt-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.offui-tt-badge--active {
+  background: #ecfdf3;
+  color: #027a48;
+}
+
+.offui-tt-badge--offboarding {
+  background: #fff4e5;
+  color: #b54708;
+}
+
+/* ── Action buttons ─────────────────────────────────────────────── */
+.offui-tt-action-btn {
+  height: 34px;
+  padding: 0 14px;
+  border: 1px solid #d0d5dd;
+  border-radius: 4px;
+  background: #ffffff;
+  cursor: pointer;
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: #344054;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.offui-tt-action-btn:hover {
+  background: #f9fafb;
+  border-color: #005a58;
+  color: #005a58;
+}
+
+.offui-tt-action-btn--offboarding {
+  border-color: #005a58;
+  color: #005a58;
+  background: #f0fafa;
+}
+
+.offui-tt-action-btn--offboarding:hover {
+  background: #005a58;
+  color: #ffffff;
+}
+
+/* ── Pagination footer ──────────────────────────────────────────── */
+.offui-tt-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 20px;
+  border-top: 1px solid #e4e7ec;
+  background: #f9fafb;
+}
+
+.offui-tt-footer-info {
+  font-family: Inter, sans-serif;
+  font-size: 13px;
+  color: #667085;
+}
+
+.offui-tt-pagination {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.offui-tt-page-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #d0d5dd;
+  border-radius: 4px;
+  background: #ffffff;
+  cursor: pointer;
+  font-family: Inter, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: #344054;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+
+.offui-tt-page-btn:hover:not(:disabled) {
+  background: #f9fafb;
+  border-color: #005a58;
+  color: #005a58;
+}
+
+.offui-tt-page-btn--active {
+  background: #005a58;
+  border-color: #005a58;
+  color: #ffffff;
+}
+
+.offui-tt-page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.offui-tt-page-ellipsis {
+  font-family: Inter, sans-serif;
+  font-size: 13px;
+  color: #667085;
+  padding: 0 4px;
+}
+
+/* ── State: loading / empty / error ─────────────────────────────── */
+.offui-tt-state {
+  padding: 48px;
+  text-align: center;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  color: #667085;
+}
