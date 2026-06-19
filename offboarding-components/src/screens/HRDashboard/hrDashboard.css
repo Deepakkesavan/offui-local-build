@@ -1,0 +1,138 @@
+/* ── Page layout ────────────────────────────────────────────────── */
+.offui-hrd {
+  width: 100%;
+  min-height: 100vh;
+  background: #f5f5f5;
+  padding: 32px 40px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ── Row 1 — Stat cards ─────────────────────────────────────────── */
+.offui-hrd-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
+/* ── Row 2 — Activity + Records ────────────────────────────────── */
+.offui-hrd-main {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.offui-hrd-section-title {
+  margin: 0 0 16px;
+  font-family: Inter, sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: #101828;
+}
+
+.offui-hrd-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+/* ── Recent Activity box ───────────────────────────────────────── */
+.offui-hrd-activity {
+  background: #ffffff;
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 560px;
+}
+
+.offui-hrd-activity-list {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  max-height: 420px;
+}
+
+.offui-hrd-activity-item {
+  display: flex;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid #f2f4f7;
+}
+
+.offui-hrd-activity-item:last-child {
+  border-bottom: none;
+}
+
+.offui-hrd-activity-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #005a58;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.offui-hrd-activity-body h3 {
+  margin: 0;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #101828;
+}
+
+.offui-hrd-activity-body p {
+  margin: 4px 0 0;
+  font-family: Inter, sans-serif;
+  font-size: 13px;
+  color: #4b5563;
+  line-height: 1.4;
+}
+
+.offui-hrd-activity-body span {
+  display: block;
+  margin-top: 6px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #98a2b3;
+}
+
+.offui-hrd-activity-empty {
+  padding: 24px 0;
+  text-align: center;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  color: #667085;
+}
+
+.offui-hrd-view-all-btn {
+  margin-top: 12px;
+  height: 44px;
+  border: 1px solid #d0d5dd;
+  border-radius: 6px;
+  background: #ffffff;
+  cursor: pointer;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #344054;
+}
+
+.offui-hrd-view-all-btn:hover {
+  border-color: #005a58;
+  color: #005a58;
+}
+
+/* ── Records section ──────────────────────────────────────────── */
+.offui-hrd-records {
+  display: flex;
+  flex-direction: column;
+}

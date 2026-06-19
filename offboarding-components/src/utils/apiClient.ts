@@ -8,6 +8,7 @@ type Role = keyof typeof JWT_TOKENS;
  * Usage:
  *   const api = createApiClient('manager');
  *   const api = createApiClient('employee');
+ *   const api = createApiClient('hr');
  */
 export const createApiClient = (role: Role) =>
   axios.create({
