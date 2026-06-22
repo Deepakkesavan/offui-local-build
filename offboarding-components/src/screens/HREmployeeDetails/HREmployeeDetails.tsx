@@ -1,3 +1,4 @@
+// src/screens/HREmployeeDetails/HREmployeeDetails.tsx
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import ProcessTimeline from '../../components/ProcessTimeline/processTimeline';
@@ -11,6 +12,7 @@ import type {
 import { createApiClient } from '../../utils/apiClient';
 import { formatDateMDY, getInitials } from '../../utils';
 import { getStageLabel, buildHrTimeline } from '../../utils/hr';
+import { useHrAccess, HR_DESIGNATIONS } from '../../utils/hrAuth';
 import { API_ENDPOINTS } from '../../config/api';
 import './HREmployeeDetails.css';
 
@@ -20,23 +22,79 @@ const api = createApiClient('hr');
 // mirrors how config/api.ts's JWT_TOKENS.hr is itself a placeholder.
 const CURRENT_HR_USER = { empId: '1081', fullName: 'HR Administrator' };
 
+// ── Access-denied state ───────────────────────────────────────────
+const HrAccessDenied = ({ desg }: { desg: string | null }) => (
+  <section className="offui-hed">
+    <div className="offui-hed-left" />
+    <div className="offui-hed-right">
+      <div style={{
+        background: '#fff5f5',
+        border: '1.5px solid #fca5a5',
+        borderRadius: '8px',
+        padding: '32px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '8px',
+      }}>
+        <p style={{
+          margin: 0,
+          fontFamily: 'Inter, sans-serif',
+          fontSize: '18px',
+          fontWeight: 700,
+          color: '#dc2626',
+        }}>
+          Access Restricted
+        </p>
+        <p style={{
+          margin: 0,
+          fontFamily: 'Inter, sans-serif',
+          fontSize: '14px',
+          color: '#7f1d1d',
+          lineHeight: '1.6',
+        }}>
+          This screen is only available to HR staff.
+          {desg && (
+            <>
+              {' '}Your current designation (<strong>{desg}</strong>) does not have access.
+            </>
+          )}
+        </p>
+        <p style={{
+          margin: '8px 0 0',
+          fontFamily: 'IBM Plex Sans, sans-serif',
+          fontSize: '12px',
+          fontWeight: 600,
+          color: '#98a2b3',
+          letterSpacing: '0.04em',
+        }}>
+          AUTHORISED DESIGNATIONS: {HR_DESIGNATIONS.join(' · ')}
+        </p>
+      </div>
+    </div>
+  </section>
+);
+
+// ── Main component ────────────────────────────────────────────────
 const HREmployeeDetails = () => {
   const { empId } = useParams<{ empId: string }>();
-  const navigate = useNavigate();
+  const navigate  = useNavigate();
 
-  const [logs, setLogs] = useState<SubmissionLogEntry[]>([]);
-  const [approvals, setApprovals] = useState<ManagerApprovalRecord[]>([]);
+  // ── Access gate ──────────────────────────────────────────────
+  const { loading: accessLoading, authorized, userDesg } = useHrAccess();
+
+  const [logs,         setLogs]         = useState<SubmissionLogEntry[]>([]);
+  const [approvals,    setApprovals]    = useState<ManagerApprovalRecord[]>([]);
   const [hrInitiation, setHrInitiation] = useState<HrInitiationInfo | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [loading,      setLoading]      = useState(true);
+  const [error,        setError]        = useState('');
 
-  const [comments, setComments] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+  const [comments,    setComments]    = useState('');
+  const [submitting,  setSubmitting]  = useState(false);
   const [actionError, setActionError] = useState('');
 
-  // ── Load: all logs + all approvals, then derive this employee's row ──
+  // ── Load data — only after access is confirmed ───────────────
   useEffect(() => {
-    if (!empId) return;
+    if (!empId || !authorized) return;
 
     Promise.all([
       api.get<SubmissionLogEntry[]>(API_ENDPOINTS.allSubmissionLogs),
@@ -51,26 +109,26 @@ const HREmployeeDetails = () => {
         setError("Could not load this employee's offboarding record. Please try again.");
       })
       .finally(() => setLoading(false));
-  }, [empId]);
+  }, [empId, authorized]);
 
-  // ── Latest submission log for this employee ──────────────────────
+  // ── Latest submission log for this employee ──────────────────
   const employeeLogs = logs
     .filter((l) => l.employeeId === empId)
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   const latestLog = employeeLogs[0] ?? null;
 
-  // ── Manager approval for this employee ────────────────────────────
+  // ── Manager approval for this employee ───────────────────────
   const approval = approvals.find((a) => a.employeeId === empId && a.isActive) ?? null;
 
-  // ── HR initiation check — once we know the submissionLogId, fetch its state ──
+  // ── HR initiation check — once submissionLogId is known ───────
   useEffect(() => {
-    if (!latestLog) return;
+    if (!latestLog || !authorized) return;
 
     api
       .get<HrInitiationInfo>(API_ENDPOINTS.getHrInitiation(latestLog.id))
       .then((res) => setHrInitiation(res.data))
       .catch((err) => console.error('Failed to check HR initiation status:', err));
-  }, [latestLog?.id]);
+  }, [latestLog?.id, authorized]);
 
   const isManagerApproved =
     latestLog?.stageAfter === 'manager_approved' ||
@@ -91,7 +149,7 @@ const HREmployeeDetails = () => {
       )
     : defaultTimelineData;
 
-  // ── Initiate handler ──────────────────────────────────────────────
+  // ── Initiate handler ─────────────────────────────────────────
   const handleInitiate = async () => {
     if (!latestLog || !empId) return;
 
@@ -101,14 +159,14 @@ const HREmployeeDetails = () => {
     try {
       const payload = {
         submissionLogId: latestLog.id,
-        employeeId: empId,
-        hrEmpId: CURRENT_HR_USER.empId,
-        hrName: CURRENT_HR_USER.fullName,
-        hrComments: comments.trim() || null,
-        employeeName: fullName,
-        designation: approval?.designation ?? null,
-        department: approval?.department ?? null,
-        lastWorkingDay: approval?.lastWorkingDay ? new Date(approval.lastWorkingDay) : null,
+        employeeId:      empId,
+        hrEmpId:         CURRENT_HR_USER.empId,
+        hrName:          CURRENT_HR_USER.fullName,
+        hrComments:      comments.trim() || null,
+        employeeName:    fullName,
+        designation:     approval?.designation ?? null,
+        department:      approval?.department ?? null,
+        lastWorkingDay:  approval?.lastWorkingDay ? new Date(approval.lastWorkingDay) : null,
       };
 
       const res = await api.post(API_ENDPOINTS.hrInitiation, payload);
@@ -134,8 +192,18 @@ const HREmployeeDetails = () => {
     }
   };
 
-  if (loading) return <div className="offui-hed-loading">Loading employee record…</div>;
-  if (error) return <div className="offui-hed-loading">{error}</div>;
+  // ── Access check rendering ────────────────────────────────────
+  if (accessLoading) {
+    return <div className="offui-hed-loading">Verifying access…</div>;
+  }
+
+  if (!authorized) {
+    return <HrAccessDenied desg={userDesg} />;
+  }
+
+  // ── Data loading / not found states ──────────────────────────
+  if (loading)    return <div className="offui-hed-loading">Loading employee record…</div>;
+  if (error)      return <div className="offui-hed-loading">{error}</div>;
   if (!latestLog) return <div className="offui-hed-loading">No offboarding record found for this employee.</div>;
 
   return (
@@ -154,7 +222,9 @@ const HREmployeeDetails = () => {
           <div className="offui-hed-avatar">{getInitials(fullName)}</div>
           <div>
             <h2 className="offui-hed-name">{fullName}</h2>
-            <p className="offui-hed-sub">{empId}{approval?.designation ? ` · ${approval.designation}` : ''}</p>
+            <p className="offui-hed-sub">
+              {empId}{approval?.designation ? ` · ${approval.designation}` : ''}
+            </p>
           </div>
           <span className="offui-hed-stage-badge">{getStageLabel(latestLog.stageAfter)}</span>
         </div>
@@ -169,7 +239,11 @@ const HREmployeeDetails = () => {
           <OffuiCards
             title="Manager Approval"
             value={approval ? 'Approved' : 'Pending'}
-            subtitle={approval ? `By ${approval.managerName ?? approval.managerEmpId}` : 'Awaiting manager sign-off'}
+            subtitle={
+              approval
+                ? `By ${approval.managerName ?? approval.managerEmpId}`
+                : 'Awaiting manager sign-off'
+            }
           />
         </div>
 
@@ -187,15 +261,26 @@ const HREmployeeDetails = () => {
             </div>
             <div className="offui-hed-field">
               <label>Resignation Date</label>
-              <input type="text" value={formatDateMDY(approval?.resignationDate ?? latestLog.createdAt)} disabled />
+              <input
+                type="text"
+                value={formatDateMDY(approval?.resignationDate ?? latestLog.createdAt)}
+                disabled
+              />
             </div>
             <div className="offui-hed-field">
               <label>Last Working Day</label>
-              <input type="text" value={approval?.lastWorkingDay ? formatDateMDY(approval.lastWorkingDay) : '—'} disabled />
+              <input
+                type="text"
+                value={approval?.lastWorkingDay ? formatDateMDY(approval.lastWorkingDay) : '—'}
+                disabled
+              />
             </div>
             <div className="offui-hed-field offui-hed-field--full">
               <label>Manager's Comments</label>
-              <textarea value={approval?.managerComments ?? '(No comments provided)'} disabled />
+              <textarea
+                value={approval?.managerComments ?? '(No comments provided)'}
+                disabled
+              />
             </div>
           </div>
         </div>
@@ -207,7 +292,10 @@ const HREmployeeDetails = () => {
             <div>
               <p className="offui-hed-done-title">HR process initiated</p>
               <p className="offui-hed-done-sub">
-                Initiated on {formatDateMDY(hrInitiation?.data?.initiatedAt ?? null)} by {hrInitiation?.data?.hrName ?? hrInitiation?.data?.hrEmpId} · Waiting for department clearances
+                Initiated on{' '}
+                {formatDateMDY(hrInitiation?.data?.initiatedAt ?? null)} by{' '}
+                {hrInitiation?.data?.hrName ?? hrInitiation?.data?.hrEmpId} ·
+                Waiting for department clearances
               </p>
             </div>
           </div>
@@ -217,21 +305,29 @@ const HREmployeeDetails = () => {
             <div>
               <p className="offui-hed-blocked-title">Awaiting Manager Approval</p>
               <p className="offui-hed-blocked-body">
-                This offboarding hasn't been approved by the reporting manager yet. HR initiation becomes available once that approval is recorded.
+                This offboarding hasn't been approved by the reporting manager yet.
+                HR initiation becomes available once that approval is recorded.
               </p>
             </div>
           </div>
         ) : (
           <div className="offui-hed-action-card">
             <h2>Initiate HR Process</h2>
-            <p>The reporting manager has approved this offboarding. Add any notes and start the HR initiation stage.</p>
+            <p>
+              The reporting manager has approved this offboarding. Add any notes and start the HR
+              initiation stage.
+            </p>
             <textarea
               className="offui-hed-comments"
               placeholder="Optional notes for this initiation…"
               value={comments}
               onChange={(e) => setComments(e.target.value)}
             />
-            <button className="offui-hed-initiate-btn" onClick={handleInitiate} disabled={submitting}>
+            <button
+              className="offui-hed-initiate-btn"
+              onClick={handleInitiate}
+              disabled={submitting}
+            >
               {submitting ? 'Initiating…' : '✓ Initiate HR Process'}
             </button>
           </div>

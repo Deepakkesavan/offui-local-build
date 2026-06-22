@@ -1,3 +1,4 @@
+// src/screens/HRDashboard/hrDashboard.tsx
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import OffuiCards from '../../components/Cards/offuiCards';
@@ -5,20 +6,80 @@ import HrTeamTable from '../../components/HRTeamTable/hrTeamTable';
 import type { SubmissionLogEntry, ManagerApprovalRecord, HrOffboardingMember } from '../../types/hr';
 import { createApiClient } from '../../utils/apiClient';
 import { buildActivityFeed, getStageLabel, isPreManagerApproval, isPendingHrApproval } from '../../utils/hr';
+import { useHrAccess, HR_DESIGNATIONS } from '../../utils/hrAuth';
 import { API_ENDPOINTS } from '../../config/api';
 import './hrDashboard.css';
 
 const api = createApiClient('hr');
 
+// ── Access-denied state ───────────────────────────────────────────
+// Shown when the logged-in user's designation is not in the HR allow-list.
+// Deliberately minimal — no navigation hints, just a clear message.
+const HrAccessDenied = ({ desg }: { desg: string | null }) => (
+  <section className="offui-hrd">
+    <div style={{
+      background: '#fff5f5',
+      border: '1.5px solid #fca5a5',
+      borderRadius: '8px',
+      padding: '32px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '8px',
+      maxWidth: '560px',
+    }}>
+      <p style={{
+        margin: 0,
+        fontFamily: 'Inter, sans-serif',
+        fontSize: '18px',
+        fontWeight: 700,
+        color: '#dc2626',
+      }}>
+        Access Restricted
+      </p>
+      <p style={{
+        margin: 0,
+        fontFamily: 'Inter, sans-serif',
+        fontSize: '14px',
+        color: '#7f1d1d',
+        lineHeight: '1.6',
+      }}>
+        The HR Dashboard is only available to HR staff.
+        {desg && (
+          <>
+            {' '}Your current designation (<strong>{desg}</strong>) does not have access to this screen.
+          </>
+        )}
+      </p>
+      <p style={{
+        margin: '8px 0 0',
+        fontFamily: 'IBM Plex Sans, sans-serif',
+        fontSize: '12px',
+        fontWeight: 600,
+        color: '#98a2b3',
+        letterSpacing: '0.04em',
+      }}>
+        AUTHORISED DESIGNATIONS: {HR_DESIGNATIONS.join(' · ')}
+      </p>
+    </div>
+  </section>
+);
+
+// ── Main component ────────────────────────────────────────────────
 const HRDashboard = () => {
   const navigate = useNavigate();
 
-  const [logs, setLogs] = useState<SubmissionLogEntry[]>([]);
-  const [approvals, setApprovals] = useState<ManagerApprovalRecord[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  // ── Access gate — must resolve before any data fetch ──────────
+  const { loading: accessLoading, authorized, userDesg } = useHrAccess();
 
+  const [logs,      setLogs]      = useState<SubmissionLogEntry[]>([]);
+  const [approvals, setApprovals] = useState<ManagerApprovalRecord[]>([]);
+  const [loading,   setLoading]   = useState(true);
+  const [error,     setError]     = useState('');
+
+  // Only load dashboard data once we know the user is authorised
   useEffect(() => {
+    if (!authorized) return;
+
     Promise.all([
       api.get<SubmissionLogEntry[]>(API_ENDPOINTS.allSubmissionLogs),
       api.get<ManagerApprovalRecord[]>(API_ENDPOINTS.allManagerApprovals),
@@ -32,11 +93,24 @@ const HRDashboard = () => {
         setError('Could not load offboarding records. Please try again.');
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [authorized]);
+
+  // ── Access check states ───────────────────────────────────────
+  if (accessLoading) {
+    return (
+      <section className="offui-hrd">
+        <div className="offui-hrd-activity" style={{ padding: '48px', textAlign: 'center', fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#667085' }}>
+          Verifying access…
+        </div>
+      </section>
+    );
+  }
+
+  if (!authorized) {
+    return <HrAccessDenied desg={userDesg} />;
+  }
 
   // ── Derive: one row per employee, latest stage only ─────────────
-  // SubmissionLogs holds the full history per employee; we only want
-  // the latest active row per empId for both the stat cards and the table.
   const latestByEmployee = new Map<string, SubmissionLogEntry>();
   for (const log of logs) {
     const existing = latestByEmployee.get(log.employeeId);
@@ -47,7 +121,7 @@ const HRDashboard = () => {
   const latestEntries = Array.from(latestByEmployee.values());
 
   // ── Stat card counts ──────────────────────────────────────────
-  const activeRequestsCount = latestEntries.filter((e) => isPreManagerApproval(e.stageAfter)).length;
+  const activeRequestsCount   = latestEntries.filter((e) => isPreManagerApproval(e.stageAfter)).length;
   const pendingApprovalsCount = latestEntries.filter((e) => isPendingHrApproval(e.stageAfter)).length;
 
   // ── Last working day lookup (from ManagerApproval table) ───────
@@ -60,11 +134,11 @@ const HRDashboard = () => {
 
   // ── Offboarding Records table data ──────────────────────────────
   const members: HrOffboardingMember[] = latestEntries.map((entry) => ({
-    empId: entry.employeeId,
-    fullName: entry.employeeName ?? entry.employeeId,
+    empId:          entry.employeeId,
+    fullName:       entry.employeeName ?? entry.employeeId,
     lastWorkingDay: lastWorkingDayByEmployee.get(entry.employeeId) ?? null,
-    stage: entry.stageAfter ?? 'exit_interview',
-    stageLabel: getStageLabel(entry.stageAfter),
+    stage:          entry.stageAfter ?? 'exit_interview',
+    stageLabel:     getStageLabel(entry.stageAfter),
   }));
 
   const activityFeed = buildActivityFeed(logs);
