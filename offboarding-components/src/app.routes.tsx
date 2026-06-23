@@ -5,6 +5,8 @@ import EmployeeRecord from './screens/EmployeeRecord/EmployeeRecord';
 import EmployeeDetails from './screens/EmployeeDetails/EmployeeDetails';
 import HRDashboard from './screens/HRDashboard/hrDashboard';
 import HREmployeeDetails from './screens/HREmployeeDetails/HREmployeeDetails';
+import ITDashboard from './screens/ITDashboard/itDashboard';
+import ITEmployeeDetails from './screens/ITEmployeeDetails/ITEmployeeDetails';
 
 const AppRoutes = () => {
   return (
@@ -20,6 +22,10 @@ const AppRoutes = () => {
         <Route path="/HRDashboard" element={<HRDashboard />} />
         {/* HR Employee Details — navigated to from HRDashboard's "View Tasks" action */}
         <Route path="/HREmployeeDetails/:empId" element={<HREmployeeDetails />} />
+        {/* IT Dashboard — mirrors HR Dashboard layout, gated to IT designations */}
+        <Route path="/ITDashboard" element={<ITDashboard />} />
+        {/* IT Employee Details — navigated to from ITDashboard's "View Tasks" action */}
+        <Route path="/ITEmployeeDetails/:empId" element={<ITEmployeeDetails />} />
       </Routes>
     </BrowserRouter>
   );

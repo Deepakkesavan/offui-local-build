@@ -1,0 +1,533 @@
+/* ── Loading ─────────────────────────────────────────────────────── */
+.offui-itd-loading {
+  padding: 48px;
+  text-align: center;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  color: #667085;
+}
+
+/* ── Two-column page layout ─────────────────────────────────────── */
+.offui-itd {
+  width: 100%;
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 400px 1fr;
+  gap: 24px;
+  padding: 32px 40px;
+  box-sizing: border-box;
+  background: #f5f5f5;
+}
+
+/* ── Left column ─────────────────────────────────────────────────── */
+.offui-itd-left {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.offui-itd-back-btn {
+  height: 36px;
+  padding: 0 16px;
+  border: 1px solid #d0d5dd;
+  border-radius: 4px;
+  background: #ffffff;
+  cursor: pointer;
+  font-family: Inter, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #344054;
+  white-space: nowrap;
+}
+
+.offui-itd-back-btn:hover {
+  background: #f9fafb;
+  border-color: #005a58;
+  color: #005a58;
+}
+
+/* ── Right column ────────────────────────────────────────────────── */
+.offui-itd-right {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── Header card ─────────────────────────────────────────────────── */
+.offui-itd-header-card {
+  background: #ffffff;
+  border: 1px solid #d8dde3;
+  border-radius: 8px;
+  padding: 20px 28px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.offui-itd-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #e0f2f1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: Inter, sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #005a58;
+  flex-shrink: 0;
+}
+
+.offui-itd-header-name {
+  margin: 0 0 2px;
+  font-family: Inter, sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: #001f29;
+}
+
+.offui-itd-header-sub {
+  margin: 0;
+  font-family: Inter, sans-serif;
+  font-size: 13px;
+  color: #667085;
+}
+
+.offui-itd-header-badge {
+  margin-left: auto;
+  display: inline-block;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  background: #fff4e5;
+  color: #b54708;
+}
+
+/* ── Section card shell ──────────────────────────────────────────── */
+.offui-itd-card {
+  background: #ffffff;
+  border: 1px solid #d8dde3;
+  border-radius: 8px;
+  padding: 24px 28px;
+}
+
+.offui-itd-card-title {
+  margin: 0 0 18px;
+  font-family: Inter, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: #001f29;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.offui-itd-card-title-icon {
+  font-size: 16px;
+}
+
+/* ── IT Asset Checklist ──────────────────────────────────────────── */
+.offui-itd-checklist-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.offui-itd-checklist-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1.5px solid #e4e7ec;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  user-select: none;
+}
+
+.offui-itd-checklist-item:hover {
+  border-color: #005a58;
+  background: #f0fafa;
+}
+
+.offui-itd-checklist-item.checked {
+  border-color: #005a58;
+  background: #f0fafa;
+}
+
+.offui-itd-checklist-item.disabled {
+  cursor: default;
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+/* Custom checkbox */
+.offui-itd-checkbox {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #d0d5dd;
+  border-radius: 4px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.offui-itd-checkbox.checked {
+  background: #005a58;
+  border-color: #005a58;
+}
+
+.offui-itd-checkbox-tick {
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.offui-itd-checklist-label {
+  font-family: Inter, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #101828;
+  margin: 0 0 2px;
+}
+
+.offui-itd-checklist-sublabel {
+  font-family: Inter, sans-serif;
+  font-size: 11px;
+  color: #667085;
+  margin: 0;
+}
+
+/* ── Access Revocation ───────────────────────────────────────────── */
+.offui-itd-revocation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.offui-itd-revocation-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 0;
+  border-bottom: 1px solid #f2f4f7;
+}
+
+.offui-itd-revocation-row:last-child {
+  border-bottom: none;
+}
+
+.offui-itd-revocation-label {
+  font-family: Inter, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: #344054;
+}
+
+/* Status badge */
+.offui-itd-status-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-family: Inter, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.offui-itd-status-badge--suspended {
+  background: #fff4e5;
+  color: #b54708;
+}
+
+.offui-itd-status-badge--revoked {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.offui-itd-status-badge--pending {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+/* ── Revocation select (dropdown for interactive mode) ───────────── */
+.offui-itd-revocation-select {
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid #d0d5dd;
+  border-radius: 4px;
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  color: #344054;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.offui-itd-revocation-select:focus {
+  outline: none;
+  border-color: #005a58;
+}
+
+.offui-itd-revocation-select:disabled {
+  background: #f8f9fa;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* ── Asset Verification ──────────────────────────────────────────── */
+.offui-itd-asset-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.offui-itd-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.offui-itd-field--full {
+  grid-column: 1 / -1;
+}
+
+.offui-itd-field label {
+  margin-bottom: 6px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #667085;
+}
+
+.offui-itd-field input,
+.offui-itd-field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #cfd6dc;
+  border-radius: 4px;
+  background: #ffffff;
+  font-family: Inter, sans-serif;
+  font-size: 13px;
+  color: #344054;
+  padding: 0 12px;
+}
+
+.offui-itd-field input {
+  height: 40px;
+}
+
+.offui-itd-field textarea {
+  min-height: 80px;
+  padding: 10px 12px;
+  resize: vertical;
+}
+
+.offui-itd-field input::placeholder,
+.offui-itd-field textarea::placeholder {
+  color: #98a2b3;
+}
+
+.offui-itd-field input:focus,
+.offui-itd-field textarea:focus {
+  outline: none;
+  border-color: #005a58;
+}
+
+.offui-itd-field input:disabled,
+.offui-itd-field textarea:disabled {
+  background: #f8f9fa;
+  color: #667085;
+  cursor: not-allowed;
+}
+
+/* ── IT Final Comments ───────────────────────────────────────────── */
+.offui-itd-comments-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 100px;
+  padding: 12px;
+  border: 1px solid #cfd6dc;
+  border-radius: 4px;
+  font-family: Inter, sans-serif;
+  font-size: 13px;
+  color: #344054;
+  resize: vertical;
+  background: #ffffff;
+}
+
+.offui-itd-comments-textarea:focus {
+  outline: none;
+  border-color: #005a58;
+}
+
+.offui-itd-comments-textarea:disabled {
+  background: #f8f9fa;
+  color: #667085;
+  cursor: not-allowed;
+}
+
+/* ── Action buttons row ──────────────────────────────────────────── */
+.offui-itd-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.offui-itd-clarify-btn {
+  height: 44px;
+  padding: 0 20px;
+  border: 1.5px solid #d0d5dd;
+  border-radius: 6px;
+  background: #ffffff;
+  cursor: pointer;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #344054;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.offui-itd-clarify-btn:hover {
+  border-color: #005a58;
+  color: #005a58;
+}
+
+.offui-itd-approve-btn {
+  height: 44px;
+  padding: 0 24px;
+  border: none;
+  border-radius: 6px;
+  background: #005a58;
+  color: #ffffff;
+  cursor: pointer;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.15s;
+}
+
+.offui-itd-approve-btn:hover {
+  background: #004947;
+}
+
+.offui-itd-approve-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ── Done / blocked / error banners ─────────────────────────────── */
+.offui-itd-done-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  border-radius: 8px;
+  background: #f0fdf4;
+  border: 1.5px solid #86efac;
+}
+
+.offui-itd-done-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #16a34a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+.offui-itd-done-title {
+  margin: 0 0 4px;
+  font-family: Inter, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: #15803d;
+}
+
+.offui-itd-done-sub {
+  margin: 0;
+  font-family: Inter, sans-serif;
+  font-size: 13px;
+  color: #16a34a;
+}
+
+.offui-itd-blocked {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 20px;
+  background: #fff5f5;
+  border: 1.5px solid #fca5a5;
+  border-radius: 8px;
+}
+
+.offui-itd-blocked-icon {
+  font-size: 18px;
+  color: #dc2626;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.offui-itd-blocked-title {
+  margin: 0 0 4px;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #dc2626;
+}
+
+.offui-itd-blocked-body {
+  margin: 0;
+  font-family: Inter, sans-serif;
+  font-size: 13px;
+  color: #7f1d1d;
+  line-height: 1.5;
+}
+
+.offui-itd-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 20px;
+  background: #fff5f5;
+  border: 1.5px solid #fca5a5;
+  border-radius: 8px;
+}
+
+.offui-itd-error-title {
+  margin: 0 0 4px;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #dc2626;
+}
+
+.offui-itd-error-body {
+  margin: 0;
+  font-family: Inter, sans-serif;
+  font-size: 13px;
+  color: #7f1d1d;
+}
