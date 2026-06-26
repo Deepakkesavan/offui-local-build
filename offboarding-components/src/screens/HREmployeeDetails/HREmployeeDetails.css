@@ -21,8 +21,10 @@
 /* ── Left column ────────────────────────────────────────────────── */
 .offui-hed-left {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 20px;
+  flex-wrap: wrap;
+  align-content: flex-start;
   align-items: flex-start;
 }
 

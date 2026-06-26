@@ -69,7 +69,7 @@ export const getInitials = (name: string): string =>
  * Index map (matches processTimelineData order):
  *   0 — Resignation Submitted
  *   1 — Reporting Manager Approval
- *   2 — Offboarding Initiated
+ *   2 — Offboarding Initiated  (HR Initiation)
  *   3 — IT Department Approval
  *   4 — Admin Approval
  *   5 — Finance Approval
@@ -81,6 +81,10 @@ export const buildTimeline = (
   submissionDate: string | null,
   isManagerApproved: boolean,
   approvedAt: string | null,
+  isHrInitiated: boolean = false,
+  initiatedAt: string | null = null,
+  isItCleared: boolean = false,
+  itClearedAt: string | null = null,
 ): TimelineItem[] => {
   const items: TimelineItem[] = defaultTimelineData.map((item) => ({ ...item }));
 
@@ -105,6 +109,28 @@ export const buildTimeline = (
       subtitle: approvedAt ? `Approved on ${formatDateMDY(approvedAt)}` : 'Manager approved',
     };
     items[2] = { ...items[2], status: 'in-progress', subtitle: 'Pending HR Initiation' };
+  }
+
+  if (isHrInitiated) {
+    items[2] = {
+      ...items[2],
+      status: 'completed',
+      subtitle: initiatedAt
+        ? `Initiated on ${new Date(initiatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+        : 'HR initiation complete',
+    };
+    items[3] = { ...items[3], status: 'in-progress', subtitle: 'Pending IT clearance' };
+  }
+
+  if (isItCleared) {
+    items[3] = {
+      ...items[3],
+      status: 'completed',
+      subtitle: itClearedAt
+        ? `Cleared on ${new Date(itClearedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+        : 'IT clearance complete',
+    };
+    items[4] = { ...items[4], status: 'in-progress', subtitle: 'Pending Admin sign-off' };
   }
 
   items[7] = { ...items[7], subtitle: calcFinalDay(submissionDate) };

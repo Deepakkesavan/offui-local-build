@@ -28,13 +28,13 @@ const ASSET_CHECKLIST = [
 
 // ── Access revocation config ──────────────────────────────────────
 const REVOCATION_ITEMS = [
-  { key: 'corporateEmail' as const, label: 'Corporate Email (G-Suite)',       defaultStatus: 'suspended' as RevocationStatus },
-  { key: 'cloudInfra'     as const, label: 'Cloud Infrastructure (AWS)',      defaultStatus: 'pending'   as RevocationStatus },
-  { key: 'vpnAccess'      as const, label: 'Internal VPN Access',             defaultStatus: 'revoked'   as RevocationStatus },
-  { key: 'internalTools'  as const, label: 'Internal Tools (Jira/Confluence)',defaultStatus: 'pending'   as RevocationStatus },
+  { key: 'corporateEmail' as const, label: 'Corporate Email (G-Suite)',        defaultStatus: 'suspended' as RevocationStatus },
+  { key: 'cloudInfra'     as const, label: 'Cloud Infrastructure (AWS)',       defaultStatus: 'pending'   as RevocationStatus },
+  { key: 'vpnAccess'      as const, label: 'Internal VPN Access',              defaultStatus: 'revoked'   as RevocationStatus },
+  { key: 'internalTools'  as const, label: 'Internal Tools (Jira/Confluence)', defaultStatus: 'pending'   as RevocationStatus },
 ] as const;
 
-type AssetKey = typeof ASSET_CHECKLIST[number]['key'];
+type AssetKey      = typeof ASSET_CHECKLIST[number]['key'];
 type RevocationKey = typeof REVOCATION_ITEMS[number]['key'];
 
 // ── Access denied ─────────────────────────────────────────────────
@@ -87,11 +87,15 @@ const ITEmployeeDetails = () => {
   }, []);
 
   // ── Data ─────────────────────────────────────────────────────
-  const [logs,         setLogs]         = useState<SubmissionLogEntry[]>([]);
-  const [approvals,    setApprovals]    = useState<ManagerApprovalRecord[]>([]);
-  const [itClearance,  setItClearance]  = useState<ItClearanceInfo | null>(null);
-  const [loading,      setLoading]      = useState(true);
-  const [error,        setError]        = useState('');
+  const [logs,        setLogs]        = useState<SubmissionLogEntry[]>([]);
+  const [approvals,   setApprovals]   = useState<ManagerApprovalRecord[]>([]);
+  const [itClearance, setItClearance] = useState<ItClearanceInfo | null>(null);
+  const [loading,     setLoading]     = useState(true);
+  const [error,       setError]       = useState('');
+
+  // ── HR initiation state ───────────────────────────────────────
+  const [isHrInitiated, setIsHrInitiated] = useState(false);
+  const [hrInitiatedAt, setHrInitiatedAt] = useState<string | null>(null);
 
   // ── Form state ────────────────────────────────────────────────
   const [assetChecked, setAssetChecked] = useState<Record<AssetKey, boolean>>({
@@ -105,11 +109,11 @@ const ITEmployeeDetails = () => {
     Object.fromEntries(REVOCATION_ITEMS.map((r) => [r.key, r.defaultStatus])) as Record<RevocationKey, RevocationStatus>
   );
 
-  const [deviceSerial,       setDeviceSerial]       = useState('');
-  const [secondaryNotes,     setSecondaryNotes]      = useState('');
-  const [itComments,         setItComments]          = useState('');
-  const [submitting,         setSubmitting]           = useState(false);
-  const [actionError,        setActionError]          = useState('');
+  const [deviceSerial,   setDeviceSerial]   = useState('');
+  const [secondaryNotes, setSecondaryNotes] = useState('');
+  const [itComments,     setItComments]     = useState('');
+  const [submitting,     setSubmitting]     = useState(false);
+  const [actionError,    setActionError]    = useState('');
 
   useEffect(() => {
     if (!empId || !authorized) return;
@@ -135,13 +139,20 @@ const ITEmployeeDetails = () => {
   // ── Manager approval ──────────────────────────────────────────
   const approval = approvals.find((a) => a.employeeId === empId && a.isActive) ?? null;
 
-  // ── HR initiation check (IT only acts after hr_initiation) ────
-  const isHrInitiated = latestLog?.stageAfter === 'hr_initiation' || latestLog?.stageAfter === 'department_clearance';
-  const isItCleared   = itClearance?.isCleared === true;
-
-  // ── Fetch IT clearance once log is known ─────────────────────
+  // ── Fetch HR initiation + IT clearance once log is known ──────
   useEffect(() => {
     if (!latestLog || !authorized) return;
+
+    // FIX: fetch real HR initiation data instead of guessing from stageAfter
+    api
+      .get(API_ENDPOINTS.getHrInitiation(latestLog.id))
+      .then((res) => {
+        if (res.data.isInitiated) {
+          setIsHrInitiated(true);
+          setHrInitiatedAt(res.data.data?.initiatedAt ?? null);
+        }
+      })
+      .catch((err) => console.error('Failed to check HR initiation status:', err));
 
     api
       .get<ItClearanceInfo>(API_ENDPOINTS.getItClearance(latestLog.id))
@@ -170,9 +181,12 @@ const ITEmployeeDetails = () => {
       .catch((err) => console.error('Failed to check IT clearance status:', err));
   }, [latestLog?.id, authorized]);
 
-  const fullName = latestLog?.employeeName ?? approval?.employeeName ?? empId ?? '';
+  const fullName   = latestLog?.employeeName ?? approval?.employeeName ?? empId ?? '';
+  const isItCleared = itClearance?.isCleared === true;
 
-  // ── Timeline ──────────────────────────────────────────────────
+  // ── Timeline ─────────────────────────────────────────────────
+  // FIX: pass isItCleared + itClearedAt so item[3] advances to "completed"
+  // after submit, and item[4] moves to "in-progress".
   const timeline: TimelineItem[] = latestLog
     ? buildHrTimeline(
         true,
@@ -180,7 +194,9 @@ const ITEmployeeDetails = () => {
         approval !== null,
         approval?.approvedAt ?? null,
         isHrInitiated,
-        null,
+        hrInitiatedAt,
+        isItCleared,
+        itClearance?.data?.clearedAt ?? null,
       )
     : defaultTimelineData;
 
@@ -220,6 +236,7 @@ const ITEmployeeDetails = () => {
       const res = await api.post(API_ENDPOINTS.itClearance, payload);
 
       if (res.status === 201) {
+        // FIX: store the full response so clearedAt is available for the timeline subtitle
         setItClearance({ isCleared: true, data: res.data });
       }
     } catch (err: unknown) {

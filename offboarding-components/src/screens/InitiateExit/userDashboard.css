@@ -40,7 +40,7 @@
 .offui-ie-right-cards {
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
     border-radius: 8px;
     padding: 16px;
     gap: 40px

@@ -21,9 +21,11 @@
 /* ── Left column ────────────────────────────────────────────────── */
 .offui-er-left {
   display: flex;
-  flex-direction: column;
-  gap: 20px;
-  align-items: flex-start;
+    flex-direction: row;
+    gap: 20px;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    align-items: flex-start;
 }
 
 .offui-er-back-btn {

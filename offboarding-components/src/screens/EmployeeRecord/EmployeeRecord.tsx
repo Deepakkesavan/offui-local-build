@@ -17,16 +17,21 @@ const EmployeeRecord = () => {
   const { empId } = useParams<{ empId: string }>();
   const navigate  = useNavigate();
 
-  const [member,       setMember]       = useState<TeamMember | null>(null);
-  const [submission,   setSubmission]   = useState<SubmissionInfo | null>(null);
-  const [approval,     setApproval]     = useState<ApprovalInfo | null>(null);
-  const [managerInfo,  setManagerInfo]  = useState<{ empId: string; fullName: string } | null>(null);
-  const [submitting,   setSubmitting]   = useState(false);
-  const [timeline,     setTimeline]     = useState<TimelineItem[]>(defaultTimelineData);
-  const [loading,      setLoading]      = useState(true);
-  const [approveError, setApproveError] = useState('');
+  const [member,        setMember]        = useState<TeamMember | null>(null);
+  const [submission,    setSubmission]    = useState<SubmissionInfo | null>(null);
+  const [approval,      setApproval]      = useState<ApprovalInfo | null>(null);
+  const [managerInfo,   setManagerInfo]   = useState<{ empId: string; fullName: string } | null>(null);
+  const [submitting,    setSubmitting]    = useState(false);
+  const [timeline,      setTimeline]      = useState<TimelineItem[]>(defaultTimelineData);
+  const [loading,       setLoading]       = useState(true);
+  const [approveError,  setApproveError]  = useState('');
 
-  // Rebuild timeline when submission / approval state changes
+  const [isHrInitiated, setIsHrInitiated] = useState(false);
+  const [hrInitiatedAt, setHrInitiatedAt] = useState<string | null>(null);
+  const [isItCleared,   setIsItCleared]   = useState(false);
+  const [itClearedAt,   setItClearedAt]   = useState<string | null>(null);
+
+  // Rebuild timeline whenever any stage state changes
   useEffect(() => {
     setTimeline(
       buildTimeline(
@@ -34,9 +39,13 @@ const EmployeeRecord = () => {
         submission?.date ?? null,
         approval?.isApproved ?? false,
         approval?.data?.approvedAt ?? null,
+        isHrInitiated,
+        hrInitiatedAt,
+        isItCleared,
+        itClearedAt,
       )
     );
-  }, [submission, approval]);
+  }, [submission, approval, isHrInitiated, hrInitiatedAt, isItCleared, itClearedAt]);
 
   useEffect(() => {
     if (!empId) return;
@@ -54,20 +63,40 @@ const EmployeeRecord = () => {
       })
       .catch(console.error);
 
-    // 2. Submission status
+    // 2. Submission status → approval → HR initiation → IT clearance
     api
       .get<SubmissionInfo>(`${API_ENDPOINTS.getSubmit}?employeeId=${empId}`)
       .then((r) => {
         setSubmission(r.data);
 
-        // 3. Approval status
         const logId = r.data.submissionLogId;
-        if (r.data.isSubmitted && logId) {
-          api
-            .get<ApprovalInfo>(API_ENDPOINTS.getApproval(logId))
-            .then((ar) => setApproval(ar.data))
-            .catch(console.error);
-        }
+        if (!r.data.isSubmitted || !logId) return;
+
+        // 3. Manager approval
+        api
+          .get<ApprovalInfo>(API_ENDPOINTS.getApproval(logId))
+          .then((ar) => {
+            setApproval(ar.data);
+
+            // 4. HR initiation
+            return api.get(API_ENDPOINTS.getHrInitiation(logId));
+          })
+          .then((hr) => {
+            if (hr.data.isInitiated) {
+              setIsHrInitiated(true);
+              setHrInitiatedAt(hr.data.data?.initiatedAt ?? null);
+            }
+
+            // 5. IT clearance
+            return api.get(API_ENDPOINTS.getItClearance(logId));
+          })
+          .then((it) => {
+            if (it.data.isCleared) {
+              setIsItCleared(true);
+              setItClearedAt(it.data.data?.clearedAt ?? null);
+            }
+          })
+          .catch(console.error);
       })
       .catch(console.error)
       .finally(() => setLoading(false));

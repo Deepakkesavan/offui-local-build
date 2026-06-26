@@ -28,13 +28,28 @@ const UserDashboard = () => {
   const [submitTime,        setSubmitTime]         = useState('');
   const [isManagerApproved, setIsManagerApproved] = useState(false);
   const [approvedAt,        setApprovedAt]         = useState<string | null>(null);
+  const [isHrInitiated,     setIsHrInitiated]     = useState(false);
+  const [hrInitiatedAt,     setHrInitiatedAt]     = useState<string | null>(null);
+  const [isItCleared,       setIsItCleared]       = useState(false);
+  const [itClearedAt,       setItClearedAt]       = useState<string | null>(null);
   const [timelineItems,     setTimelineItems]      = useState<TimelineItem[]>(defaultTimelineData);
   const [empLoaded,         setEmpLoaded]          = useState(false);
 
-  // Rebuild timeline whenever relevant state changes
+  // Rebuild timeline whenever any stage state changes
   useEffect(() => {
-    setTimelineItems(buildTimeline(submitted, submitDate, isManagerApproved, approvedAt));
-  }, [submitted, submitDate, isManagerApproved, approvedAt]);
+    setTimelineItems(
+      buildTimeline(
+        submitted,
+        submitDate,
+        isManagerApproved,
+        approvedAt,
+        isHrInitiated,
+        hrInitiatedAt,
+        isItCleared,
+        itClearedAt,
+      )
+    );
+  }, [submitted, submitDate, isManagerApproved, approvedAt, isHrInitiated, hrInitiatedAt, isItCleared, itClearedAt]);
 
   // ── Step 1: fetch employee data ──────────────────────────────────
   useEffect(() => {
@@ -57,7 +72,7 @@ const UserDashboard = () => {
       .catch((err) => console.error('Failed to fetch employee data:', err));
   }, []);
 
-  // ── Step 2: check prior submission + approval ────────────────────
+  // ── Step 2: check prior submission → approval → HR initiation → IT clearance ──
   useEffect(() => {
     if (!empLoaded || !empData.employeeId) return;
 
@@ -71,19 +86,37 @@ const UserDashboard = () => {
         setSubmitTime(data.time ?? '');
         setSubmitted(true);
 
-        // ── Step 3: check manager approval ──────────────────────
         const logId = data.submissionLogId;
-        if (logId) {
-          api
-            .get<ApprovalInfo>(API_ENDPOINTS.getApproval(logId))
-            .then((ar) => {
-              if (ar.data.isApproved) {
-                setIsManagerApproved(true);
-                setApprovedAt(ar.data.data?.approvedAt ?? null);
-              }
-            })
-            .catch((err) => console.error('Failed to check approval:', err));
-        }
+        if (!logId) return;
+
+        // ── Step 3: manager approval ─────────────────────────────
+        api
+          .get<ApprovalInfo>(API_ENDPOINTS.getApproval(logId))
+          .then((ar) => {
+            if (ar.data.isApproved) {
+              setIsManagerApproved(true);
+              setApprovedAt(ar.data.data?.approvedAt ?? null);
+            }
+
+            // ── Step 4: HR initiation ──────────────────────────
+            return api.get(API_ENDPOINTS.getHrInitiation(logId));
+          })
+          .then((hr) => {
+            if (hr.data.isInitiated) {
+              setIsHrInitiated(true);
+              setHrInitiatedAt(hr.data.data?.initiatedAt ?? null);
+            }
+
+            // ── Step 5: IT clearance ───────────────────────────
+            return api.get(API_ENDPOINTS.getItClearance(logId));
+          })
+          .then((it) => {
+            if (it.data.isCleared) {
+              setIsItCleared(true);
+              setItClearedAt(it.data.data?.clearedAt ?? null);
+            }
+          })
+          .catch((err) => console.error('Failed to check downstream stages:', err));
       })
       .catch((err) => console.error('Failed to check submission status:', err));
   }, [empLoaded, empData.employeeId]);
@@ -96,7 +129,7 @@ const UserDashboard = () => {
         action:      'record_created',
         performedBy: data.fullName || data.employeeId,
         employeeData: null,
-        stageBefore:  null,
+        stageBefore:  data.stageBefore || null,
         stageAfter:   'exit_interview',
       };
 
